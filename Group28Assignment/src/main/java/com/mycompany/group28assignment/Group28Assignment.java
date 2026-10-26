@@ -16,7 +16,7 @@ public class Group28Assignment {
         login();
     }
     
-    private static void login(){
+    public static void login(){
         JFrame loginFrame = new JFrame("Login");
 
         JLabel loginTitle = new JLabel("Welcome to ...", SwingConstants.CENTER);
@@ -34,7 +34,7 @@ public class Group28Assignment {
         passwordPanel.add(passwordLabel);
         passwordPanel.add(passwordInput);
 
-// add to frame
+        // add to frame
         JPanel mainPanel = new JPanel(new GridLayout(3, 1, 8, 8));
         mainPanel.add(loginTitle);
         mainPanel.add(usernamePanel);
@@ -47,6 +47,7 @@ public class Group28Assignment {
         loginFrame.add(mainPanel, BorderLayout.CENTER);
         loginFrame.add(buttons, BorderLayout.SOUTH);
 
+        loginFrame.pack();
         loginFrame.setSize(400, 250);
         loginFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         loginFrame.setLocationRelativeTo(null);
@@ -71,6 +72,8 @@ public class Group28Assignment {
                         String storedPassword = parts[3];
 
                         if (storedUsername.equals(username) && storedPassword.equals(passwordHash)) {
+                            String storedRole = parts[5];
+                            accessControl(storedRole);
                             JOptionPane.showMessageDialog(loginFrame,
                                     "Login OK: " + username + "\nRole: " + parts[5],
                                     "Success",
@@ -94,8 +97,54 @@ public class Group28Assignment {
                 passwordInput.setText(null); 
             
             }
-        });
-        
-        
+        }); 
     }
+    
+//    public static void accessControl(String role){
+//        try{
+//        JFrame loginFrame = new JFrame("Login");
+//
+//        JLabel loginTitle = new JLabel("Welcome to ...", SwingConstants.CENTER);
+//        loginTitle.setFont(new Font("SansSerif", Font.BOLD, 20));
+//
+//        JLabel usernameLabel = new JLabel("Username:");
+//        JTextField usernameInput = new JTextField(15);
+//        JLabel passwordLabel = new JLabel("Password:");
+//        JTextField passwordInput = new JPasswordField(15);
+//
+//        JPanel usernamePanel = new JPanel();
+//        usernamePanel.add(usernameLabel);
+//        usernamePanel.add(usernameInput);
+//        JPanel passwordPanel = new JPanel();
+//        passwordPanel.add(passwordLabel);
+//        passwordPanel.add(passwordInput);
+//
+//        // add to frame
+//        JPanel mainPanel = new JPanel(new GridLayout(3, 1, 8, 8));
+//        mainPanel.add(loginTitle);
+//        mainPanel.add(usernamePanel);
+//        mainPanel.add(passwordPanel);
+//
+//        JButton loginBtn = new JButton("Login");
+//        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER));
+//        buttons.add(loginBtn);
+//
+//        loginFrame.add(mainPanel, BorderLayout.CENTER);
+//        loginFrame.add(buttons, BorderLayout.SOUTH);
+//
+//        loginFrame.pack();
+//        loginFrame.setSize(400, 250);
+//        loginFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//        loginFrame.setLocationRelativeTo(null);
+//        loginFrame.setVisible(true);
+//            
+//            switch (role){
+//                "Manager":
+//                    
+//            }
+//            
+//        } catch(Exception ex){
+//        
+//        }
+//    }
 }
