@@ -103,6 +103,9 @@ public class Group28Assignment{
                 case "Manager" -> {
                     currentUser = new Manager(userID);
                 }
+                case "AttendanceOfficer" -> {
+                    currentUser = new AttendanceOfficer(userID);
+                }
                 default -> {
                     JOptionPane.showMessageDialog(null,
                             "Unknown role: " + userRole,
