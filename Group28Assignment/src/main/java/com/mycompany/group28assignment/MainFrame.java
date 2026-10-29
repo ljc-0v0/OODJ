@@ -26,6 +26,14 @@ public class MainFrame extends JFrame {
             container.add(m.createManagerPanel(this), "CreateManager");
             
             cards.show(container, "Manager"); 
+        }else if (currentUser instanceof AttendanceOfficer o) {
+         
+            JPanel attendance_officerPanel = attendance_officerPanel(o);
+
+            container.add(attendance_officerPanel, "AttendanceOfficer");
+            
+            
+            cards.show(container, "AttendanceOfficer");
         }  
     }
     
@@ -40,7 +48,34 @@ public class MainFrame extends JFrame {
         return panel;
     }
     
+    private JPanel attendance_officerPanel(AttendanceOfficer o){
+        JPanel panel = new JPanel(new GridLayout(4,4,8,8));
+        JButton viewBtn = new JButton("View Attendance Records");
+        JButton searchBtn = new JButton("Search Attendance Records");
+        JButton reportBtn = new JButton("Generate Attendance Report");
+        JButton logoutBtn = new JButton("Log Out");
+        
+        viewBtn.addActionListener(e -> {
+            showPanel("CreateManager");
+        });
+        searchBtn.addActionListener(e -> {
+            showPanel("CreateManager");
+        });
+        reportBtn.addActionListener(e -> {
+            showPanel("CreateManager");
+        });
+        logoutBtn.addActionListener(e -> {
+            showPanel("CreateManager");
+        });
+        
+        panel.add(viewBtn);
+        panel.add(searchBtn);
+        panel.add(reportBtn);
+        panel.add(logoutBtn);
+        return panel;
+    }
+    
     public void showPanel(String name) {
         cards.show(container, name);
-}
+    }
 }
