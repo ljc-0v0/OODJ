@@ -31,6 +31,8 @@ public class MainFrame extends JFrame {
             JPanel attendance_officerPanel = attendance_officerPanel(o);
 
             container.add(attendance_officerPanel, "AttendanceOfficer");
+            container.add(o.viewClassPanel(this), "viewClass");
+            container.add(o.generateReportPanel(this),"GenerateReport");
             
             
             cards.show(container, "AttendanceOfficer");
@@ -56,13 +58,13 @@ public class MainFrame extends JFrame {
         JButton logoutBtn = new JButton("Log Out");
         
         viewBtn.addActionListener(e -> {
-            showPanel("CreateManager");
+            showPanel("viewClass");
         });
         searchBtn.addActionListener(e -> {
-            showPanel("CreateManager");
+            showPanel("searchAttendance");
         });
         reportBtn.addActionListener(e -> {
-            showPanel("CreateManager");
+            showPanel("GenerateReport");
         });
         logoutBtn.addActionListener(e -> {
             showPanel("CreateManager");
@@ -74,7 +76,28 @@ public class MainFrame extends JFrame {
         panel.add(logoutBtn);
         return panel;
     }
+
+    public void showAttendanceList(String classID) {
+        AttendanceOfficer officer = (AttendanceOfficer) currentUser;
+
+        JPanel attendancePanel =
+                officer.viewAttendanceListPanel(this, classID);
+
+        container.add(attendancePanel, "AttendanceList");
+        cards.show(container, "AttendanceList");
+    }    
     
+    public void showMarkAttendance(String attendanceID) {
+        AttendanceOfficer officer = (AttendanceOfficer) currentUser;
+
+        JPanel markPanel = officer.markAttendance(this, attendanceID);
+
+        container.add(markPanel, "MarkAttendance");
+        cards.show(container, "MarkAttendance");
+
+        container.revalidate();
+        container.repaint();
+    }
     public void showPanel(String name) {
         cards.show(container, name);
     }
