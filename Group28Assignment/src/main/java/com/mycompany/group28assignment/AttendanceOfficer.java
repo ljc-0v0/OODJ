@@ -578,7 +578,6 @@ public class AttendanceOfficer extends User{
         JLabel title = new JLabel("Attendance Report", JLabel.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 22));
 
-        // Search field
         JTextField classField = new JTextField(10);
         JButton generateBtn = new JButton("Generate Report");
         JButton backBtn = new JButton("Back");
@@ -589,7 +588,6 @@ public class AttendanceOfficer extends User{
         searchPanel.add(classField);
         searchPanel.add(generateBtn);
 
-        // Table
         String[] columns = {
             "Student ID",
             "Student Name",
@@ -610,7 +608,6 @@ public class AttendanceOfficer extends User{
 
         JScrollPane scrollPane = new JScrollPane(table);
 
-        // Total summary
         JLabel totalPresentLabel = new JLabel("Total Present: 0");
         JLabel totalAbsentLabel = new JLabel("Total Absent: 0");
         JLabel totalLateLabel = new JLabel("Total Late: 0");
@@ -621,7 +618,6 @@ public class AttendanceOfficer extends User{
         summaryPanel.add(totalAbsentLabel);
         summaryPanel.add(totalLateLabel);
 
-        // Generate report
         generateBtn.addActionListener(e -> {
 
             String classID = classField.getText().trim();
@@ -692,7 +688,6 @@ public class AttendanceOfficer extends User{
                     return;
                 }
 
-                // Read attendance sessions
                 List<String> attendanceLines =
                         Files.readAllLines(attendancePath);
 
@@ -758,7 +753,6 @@ public class AttendanceOfficer extends User{
                 int totalAbsent = 0;
                 int totalLate = 0;
 
-                // Display report
                 for (String studentID : studentNames.keySet()) {
 
                     String studentName = studentNames.get(studentID);
@@ -798,7 +792,6 @@ public class AttendanceOfficer extends User{
             }
         });
 
-        // Back button
         backBtn.addActionListener(e -> {
             mainFrame.showPanel("AttendanceOfficer");
         });
