@@ -8,7 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 public class EquipmentInventoryManagement extends JFrame {
@@ -218,7 +217,7 @@ public class EquipmentInventoryManagement extends JFrame {
                 "Equipment Records"
         ));
 
-        // SEARCH PANEL
+        // SEARCH && FILTER PANEL
 
         JPanel searchPanel = new JPanel(
                 new FlowLayout(FlowLayout.LEFT)
@@ -227,16 +226,18 @@ public class EquipmentInventoryManagement extends JFrame {
         txtSearch = new JTextField(20);
 
         JButton btnSearch = new JButton("Search");
+        JButton btnFilter = new JButton("Filter");
 
         searchPanel.add(new JLabel("Search by ID or Name:"));
         searchPanel.add(txtSearch);
         searchPanel.add(btnSearch);
-
+        searchPanel.add(btnFilter);
+        
         JPanel rightPanel = new JPanel(new BorderLayout(5, 5));
 
         rightPanel.add(searchPanel, BorderLayout.NORTH);
         rightPanel.add(tableScrollPane, BorderLayout.CENTER);
-
+        
         // STATUS MESSAGE
         lblMessage = new JLabel("Ready");
 
@@ -265,7 +266,22 @@ public class EquipmentInventoryManagement extends JFrame {
         btnDelete.addActionListener(e -> deleteEquipment());
         btnClear.addActionListener(e -> clearForm());
 
-        txtSearch.addActionListener(e -> searchEquipment());
+        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+        @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                searchEquipment();
+            }
+
+        @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                searchEquipment();
+            }
+
+        @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                searchEquipment(); 
+            }
+    });
 
         equipmentTable.getSelectionModel()
                 .addListSelectionListener(e -> {
@@ -325,8 +341,8 @@ public class EquipmentInventoryManagement extends JFrame {
         for (Equipment item : equipmentList) {
 
             try {
-
-                int currentId = Integer.parseInt(item.id);
+                String cleanId = item.id.replace("E","");
+                int currentId = Integer.parseInt(cleanId);
 
                 if (currentId >= nextId) {
                     nextId = currentId + 1;
@@ -352,7 +368,7 @@ public class EquipmentInventoryManagement extends JFrame {
             );
         }
 
-        return String.valueOf(nextId);
+        return String.format("E%03d",nextId);
     }
 
     // ==================== VALIDATE INPUT ====================
@@ -751,15 +767,15 @@ public class EquipmentInventoryManagement extends JFrame {
                     }
 
                     Equipment item = new Equipment(
-                            decode(data[0]),
-                            decode(data[1]),
-                            decode(data[2]),
-                            decode(data[3]),
+                            (data[0]),
+                            (data[1]),
+                            (data[2]),
+                            (data[3]),
                             1,
-                            decode(data[5]),
-                            decode(data[6]),
-                            decode(data[7]),
-                            decode(data[8])
+                            (data[5]),
+                            (data[6]),
+                            (data[7]),
+                            (data[8])
                     );
 
                     equipmentList.add(item);
@@ -809,7 +825,7 @@ public class EquipmentInventoryManagement extends JFrame {
                         writer.write("|");
                     }
 
-                    writer.write(encode(data[i]));
+                    writer.write((data[i]));
                 }
 
                 writer.newLine();
@@ -829,28 +845,6 @@ public class EquipmentInventoryManagement extends JFrame {
         }
     }
 
-    // ==================== ENCODE DATA ====================
-
-    private String encode(String value) {
-
-        if (value == null) {
-            value = "";
-        }
-
-        return Base64.getEncoder().encodeToString(
-                value.getBytes(StandardCharsets.UTF_8)
-        );
-    }
-
-    // ==================== DECODE DATA ====================
-
-    private String decode(String value) {
-
-        return new String(
-                Base64.getDecoder().decode(value),
-                StandardCharsets.UTF_8
-        );
-    }
 
     // ==================== MAIN METHOD ====================
 
