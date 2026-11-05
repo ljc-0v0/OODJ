@@ -150,7 +150,6 @@ public class EquipmentInventoryManagement extends JFrame {
         addFormField(formPanel, gbc, 7, "Added By:", txtAddedBy);
 
         // BUTTON PANEL
-        // View All, View Individual Records and Clear Search removed.
 
         JPanel buttonPanel = new JPanel(
                 new GridLayout(0, 2, 8, 8)
@@ -220,8 +219,6 @@ public class EquipmentInventoryManagement extends JFrame {
         ));
 
         // SEARCH PANEL
-        // Search button is beside the search field.
-        // Clear Search button has been removed.
 
         JPanel searchPanel = new JPanel(
                 new FlowLayout(FlowLayout.LEFT)
@@ -336,7 +333,6 @@ public class EquipmentInventoryManagement extends JFrame {
                 }
 
             } catch (NumberFormatException ex) {
-                // Ignore non-numeric IDs.
             }
         }
 
@@ -459,7 +455,7 @@ public class EquipmentInventoryManagement extends JFrame {
         }
 
         lblMessage.setText(
-                "Showing all individual equipment records."
+                ""
         );
     }
 
@@ -769,8 +765,6 @@ public class EquipmentInventoryManagement extends JFrame {
                     equipmentList.add(item);
 
                 } catch (IllegalArgumentException ex) {
-
-                    // Skip invalid records.
                 }
             }
 
