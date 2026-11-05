@@ -35,6 +35,8 @@ public class EquipmentInventoryManagement extends JFrame {
     private JTable equipmentTable;
     private DefaultTableModel tableModel;
     private JLabel lblMessage;
+    private JPanel formPanel;
+    private JDialog addDialog;
 
     // ==================== EQUIPMENT CLASS ====================
 
@@ -100,7 +102,7 @@ public class EquipmentInventoryManagement extends JFrame {
         add(title, BorderLayout.NORTH);
 
         // FORM PANEL
-        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel = new JPanel(new GridBagLayout());
 
         formPanel.setBorder(BorderFactory.createTitledBorder(
                 "Equipment Information"
@@ -147,28 +149,6 @@ public class EquipmentInventoryManagement extends JFrame {
         addFormField(formPanel, gbc, 5, "Location:", txtLocation);
         addFormField(formPanel, gbc, 6, "Updated Date:", txtUpdatedDate);
         addFormField(formPanel, gbc, 7, "Added By:", txtAddedBy);
-
-        // BUTTON PANEL
-
-        JPanel buttonPanel = new JPanel(
-                new GridLayout(0, 2, 8, 8)
-        );
-
-        JButton btnAdd = new JButton("Add Equipment");
-        JButton btnUpdate = new JButton("Update Equipment");
-        JButton btnDelete = new JButton("Delete Equipment");
-        JButton btnClear = new JButton("Clear Form");
-
-        buttonPanel.add(btnAdd);
-        buttonPanel.add(btnUpdate);
-        buttonPanel.add(btnDelete);
-        buttonPanel.add(btnClear);
-
-        JPanel leftPanel = new JPanel(new BorderLayout(5, 10));
-
-        leftPanel.add(formPanel, BorderLayout.CENTER);
-        leftPanel.add(buttonPanel, BorderLayout.SOUTH);
-        leftPanel.setPreferredSize(new Dimension(380, 500));
 
         // TABLE
         String[] columns = {
@@ -217,9 +197,9 @@ public class EquipmentInventoryManagement extends JFrame {
                 "Equipment Records"
         ));
 
-        // SEARCH && FILTER PANEL
+        // BUTTON PANEL
 
-        JPanel searchPanel = new JPanel(
+        JPanel buttonPanel = new JPanel(
                 new FlowLayout(FlowLayout.LEFT)
         );
 
@@ -227,17 +207,19 @@ public class EquipmentInventoryManagement extends JFrame {
 
         JButton btnSearch = new JButton("Search");
         JButton btnFilter = new JButton("Filter");
+        JButton btnAdd = new JButton("Add");
 
-        searchPanel.add(new JLabel("Search by ID or Name:"));
-        searchPanel.add(txtSearch);
-        searchPanel.add(btnSearch);
-        searchPanel.add(btnFilter);
-        
+        buttonPanel.add(new JLabel("Search by ID or Name:"));
+        buttonPanel.add(txtSearch);
+        buttonPanel.add(btnSearch);
+        buttonPanel.add(btnFilter);
+        buttonPanel.add(btnAdd);
+
         JPanel rightPanel = new JPanel(new BorderLayout(5, 5));
 
-        rightPanel.add(searchPanel, BorderLayout.NORTH);
+        rightPanel.add(buttonPanel, BorderLayout.NORTH);
         rightPanel.add(tableScrollPane, BorderLayout.CENTER);
-        
+
         // STATUS MESSAGE
         lblMessage = new JLabel("Ready");
 
@@ -253,43 +235,149 @@ public class EquipmentInventoryManagement extends JFrame {
                 0, 10, 0, 10
         ));
 
-        contentPanel.add(leftPanel, BorderLayout.WEST);
         contentPanel.add(rightPanel, BorderLayout.CENTER);
 
         add(contentPanel, BorderLayout.CENTER);
         add(lblMessage, BorderLayout.SOUTH);
 
         // BUTTON ACTIONS
-        btnAdd.addActionListener(e -> addEquipment());
+        btnAdd.addActionListener(e -> showAddDialog());
         btnSearch.addActionListener(e -> searchEquipment());
-        btnUpdate.addActionListener(e -> updateEquipment());
-        btnDelete.addActionListener(e -> deleteEquipment());
-        btnClear.addActionListener(e -> clearForm());
+        
+        txtSearch.getDocument().addDocumentListener(
+                new javax.swing.event.DocumentListener() {
 
-        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-        @Override
+            @Override
             public void insertUpdate(javax.swing.event.DocumentEvent e) {
                 searchEquipment();
             }
 
-        @Override
+            @Override
             public void removeUpdate(javax.swing.event.DocumentEvent e) {
                 searchEquipment();
             }
 
-        @Override
+            @Override
             public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                searchEquipment(); 
+                searchEquipment();
             }
-    });
+        });
 
-        equipmentTable.getSelectionModel()
-                .addListSelectionListener(e -> {
+        equipmentTable.addMouseListener(
+                new java.awt.event.MouseAdapter() {
 
-                    if (!e.getValueIsAdjusting()) {
-                        fillFormFromTable();
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+
+                int row = equipmentTable.rowAtPoint(e.getPoint());
+
+                if (row >= 0) {
+
+                    equipmentTable.setRowSelectionInterval(row, row);
+
+                    String id = tableModel.getValueAt(row, 0).toString();
+
+                    selectedEquipment = findEquipmentById(id);
+
+                    if (selectedEquipment != null) {
+                        showEditDialog();
                     }
-                });
+                }
+            }
+        });
+    }
+
+    // ==================== SHOW ADD EQUIPMENT DIALOG ====================
+
+    private void showAddDialog() {
+
+        txtId.setText("");
+        txtName.setText("");
+        txtCategory.setText("");
+        txtDescription.setText("");
+        txtStatus.setText("Available");
+        txtLocation.setText("");
+        txtUpdatedDate.setText(LocalDate.now().toString());
+        txtAddedBy.setText("");
+
+        addDialog = new JDialog(
+                this,
+                "Add Equipment",
+                true
+        );
+
+        addDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        addDialog.setLayout(new BorderLayout(10, 10));
+
+        JPanel dialogButtonPanel = new JPanel(
+                new FlowLayout(FlowLayout.RIGHT)
+        );
+
+        JButton btnSave = new JButton("Save");
+        JButton btnCancel = new JButton("Cancel");
+
+        dialogButtonPanel.add(btnSave);
+        dialogButtonPanel.add(btnCancel);
+
+        addDialog.add(formPanel, BorderLayout.CENTER);
+        addDialog.add(dialogButtonPanel, BorderLayout.SOUTH);
+
+        btnSave.addActionListener(e -> addEquipment());
+        btnCancel.addActionListener(e -> addDialog.dispose());
+
+        addDialog.pack();
+        addDialog.setMinimumSize(new Dimension(450, 480));
+        addDialog.setLocationRelativeTo(this);
+        addDialog.setVisible(true);
+    }
+    
+    // ==================== SHOW EDIT EQUIPMENT DIALOG ====================
+
+    private void showEditDialog() {
+
+        if (selectedEquipment == null) {
+            return;
+        }
+
+        txtId.setText(selectedEquipment.id);
+        txtName.setText(selectedEquipment.name);
+        txtCategory.setText(selectedEquipment.category);
+        txtDescription.setText(selectedEquipment.description);
+        txtStatus.setText(selectedEquipment.status);
+        txtLocation.setText(selectedEquipment.location);
+        txtUpdatedDate.setText(selectedEquipment.updatedDate);
+        txtAddedBy.setText(selectedEquipment.addedBy);
+
+        addDialog = new JDialog(
+                this,
+                "Update Equipment",
+                true
+        );
+
+        addDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        addDialog.setLayout(new BorderLayout(10, 10));
+
+        JPanel dialogButtonPanel = new JPanel(
+                new FlowLayout(FlowLayout.CENTER, 15, 10)
+        );
+
+        JButton btnUpdate = new JButton("Update");
+        JButton btnDelete = new JButton("Delete");
+
+        dialogButtonPanel.add(btnUpdate);
+        dialogButtonPanel.add(btnDelete);
+
+        addDialog.add(formPanel, BorderLayout.CENTER);
+        addDialog.add(dialogButtonPanel, BorderLayout.SOUTH);
+
+        btnUpdate.addActionListener(e -> updateEquipment());
+
+        btnDelete.addActionListener(e -> deleteEquipment());
+
+        addDialog.pack();
+        addDialog.setMinimumSize(new Dimension(450, 480));
+        addDialog.setLocationRelativeTo(this);
+        addDialog.setVisible(true);
     }
 
     // ==================== FORM FIELD HELPER ====================
@@ -341,7 +429,7 @@ public class EquipmentInventoryManagement extends JFrame {
         for (Equipment item : equipmentList) {
 
             try {
-                String cleanId = item.id.replace("E","");
+                String cleanId = item.id.replace("E", "");
                 int currentId = Integer.parseInt(cleanId);
 
                 if (currentId >= nextId) {
@@ -368,7 +456,7 @@ public class EquipmentInventoryManagement extends JFrame {
             );
         }
 
-        return String.format("E%03d",nextId);
+        return String.format("E%03d", nextId);
     }
 
     // ==================== VALIDATE INPUT ====================
@@ -442,6 +530,10 @@ public class EquipmentInventoryManagement extends JFrame {
             displayAllRecords();
             clearForm();
 
+            if (addDialog != null && addDialog.isVisible()) {
+                addDialog.dispose();
+            }
+
             lblMessage.setText(
                     "Equipment added successfully."
             );
@@ -458,7 +550,7 @@ public class EquipmentInventoryManagement extends JFrame {
             equipmentList.remove(item);
         }
     }
-
+    
     // ==================== DISPLAY ALL RECORDS ====================
 
     private void displayAllRecords() {
@@ -470,9 +562,7 @@ public class EquipmentInventoryManagement extends JFrame {
             addTableRow(item);
         }
 
-        lblMessage.setText(
-                ""
-        );
+        lblMessage.setText("");
     }
 
     // ==================== ADD TABLE ROW ====================
@@ -575,20 +665,24 @@ public class EquipmentInventoryManagement extends JFrame {
         selectedEquipment.addedBy =
                 txtAddedBy.getText().trim();
 
-        if (saveToFile()) {
+    if (saveToFile()) {
 
-            if (txtSearch.getText().trim().isEmpty()) {
-                displayAllRecords();
-            } else {
-                searchEquipment();
-            }
+        if (addDialog != null && addDialog.isVisible()) {
+            addDialog.dispose();
+        }
 
-            clearForm();
+        if (txtSearch.getText().trim().isEmpty()) {
+            displayAllRecords();
+        } else {
+            searchEquipment();
+        }
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Equipment updated successfully!"
-            );
+        clearForm();
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Equipment updated successfully!"
+        );
 
         } else {
 
@@ -636,6 +730,10 @@ public class EquipmentInventoryManagement extends JFrame {
 
         if (saveToFile()) {
 
+            if (addDialog != null && addDialog.isVisible()) {
+                addDialog.dispose();
+            }
+
             displayAllRecords();
             clearForm();
 
@@ -643,7 +741,7 @@ public class EquipmentInventoryManagement extends JFrame {
                     this,
                     "Equipment deleted successfully!"
             );
-
+            
         } else {
 
             equipmentList.add(itemToDelete);
@@ -767,15 +865,15 @@ public class EquipmentInventoryManagement extends JFrame {
                     }
 
                     Equipment item = new Equipment(
-                            (data[0]),
-                            (data[1]),
-                            (data[2]),
-                            (data[3]),
+                            data[0],
+                            data[1],
+                            data[2],
+                            data[3],
                             1,
-                            (data[5]),
-                            (data[6]),
-                            (data[7]),
-                            (data[8])
+                            data[5],
+                            data[6],
+                            data[7],
+                            data[8]
                     );
 
                     equipmentList.add(item);
@@ -825,7 +923,7 @@ public class EquipmentInventoryManagement extends JFrame {
                         writer.write("|");
                     }
 
-                    writer.write((data[i]));
+                    writer.write(data[i]);
                 }
 
                 writer.newLine();
@@ -844,7 +942,6 @@ public class EquipmentInventoryManagement extends JFrame {
             return false;
         }
     }
-
 
     // ==================== MAIN METHOD ====================
 
