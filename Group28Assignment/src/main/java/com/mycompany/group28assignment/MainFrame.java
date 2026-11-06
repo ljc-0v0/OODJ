@@ -1,3 +1,4 @@
+
 package com.mycompany.group28assignment;
 
 import javax.swing.*;
@@ -13,7 +14,7 @@ public class MainFrame extends JFrame {
         super("System");
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(700, 500);
+        setSize(900, 600);
         setLocationRelativeTo(null);
 
         this.currentUser = currentUser;
@@ -40,7 +41,11 @@ public class MainFrame extends JFrame {
 
         } else if (currentUser instanceof Instructor instructor) {
 
-            container.add(new InstructorPanel(), "Instructor");
+            container.add(
+                new InstructorPanel(this::logout),
+                "Instructor"
+            );
+
             cards.show(container, "Instructor");
         }
     }
@@ -122,5 +127,23 @@ public class MainFrame extends JFrame {
 
     public void showPanel(String name) {
         cards.show(container, name);
+    }
+
+    private void logout() {
+
+        int answer = JOptionPane.showConfirmDialog(
+            this,
+            "Are you sure you want to log out?",
+            "Log Out",
+            JOptionPane.YES_NO_OPTION
+        );
+
+        if (answer == JOptionPane.YES_OPTION) {
+            dispose();
+
+            SwingUtilities.invokeLater(() ->
+                Group28Assignment.main(new String[0])
+            );
+        }
     }
 }
