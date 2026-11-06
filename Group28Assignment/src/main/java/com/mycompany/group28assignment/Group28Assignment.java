@@ -100,12 +100,15 @@ public class Group28Assignment{
         try{
             final User currentUser;
             switch (userRole){
-                case "Manager" -> {
-                    currentUser = new Manager(userID);
-                }
-                case "AttendanceOfficer" -> {
-                    currentUser = new AttendanceOfficer(userID);
-                }
+    case "Manager" -> {
+        currentUser = new Manager(userID);
+    }
+    case "Instructor" -> {
+        currentUser = new Instructor(userID);
+    }
+    case "AttendanceOfficer" -> {
+        currentUser = new AttendanceOfficer(userID);
+    }
                 default -> {
                     JOptionPane.showMessageDialog(null,
                             "Unknown role: " + userRole,
