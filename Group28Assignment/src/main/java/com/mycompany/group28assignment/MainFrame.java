@@ -21,15 +21,21 @@ public class MainFrame extends JFrame {
         add(container);
 
         if (currentUser instanceof Manager m) {
-
+            // Create panels
             JPanel managerPanel = managerPanel(m);
 
+            // Register each panel under a name
+            cardMap.put("Manager", managerPanel);
+            cardMap.put("CreateManager", m.createManagerPanel(this));
+            cardMap.put("ViewManager", m.loadManagerPanel(this));
+            
             container.add(managerPanel, "Manager");
             container.add(m.createManagerPanel(this), "CreateManager");
-
-            cards.show(container, "Manager");
-
-        } else if (currentUser instanceof AttendanceOfficer o) {
+            container.add(m.loadManagerPanel(this), "ViewManager");
+            container.add(m.createAdminPanel(this), "CreateAdmin");
+            container.add(m.loadAdminPanel(this), "ViewAdmin");
+            cards.show(container, "Manager"); 
+        }  else if (currentUser instanceof AttendanceOfficer o) {
 
             JPanel attendanceOfficerPanel = attendance_officerPanel(o);
 
@@ -50,19 +56,46 @@ public class MainFrame extends JFrame {
         }
     }
 
-    private JPanel managerPanel(Manager m) {
-
-        JPanel panel = new JPanel(new GridLayout(2, 2, 8, 8));
-
-        JButton createManagerBtn = new JButton("Add New Manager");
-
-        createManagerBtn.addActionListener(e -> {
-            showPanel("CreateManager");
+   private JPanel managerPanel(Manager m){
+        JPanel panel = new JPanel(new GridLayout(0,1,8,8));
+        JButton loadManagerBtn = new JButton("View Managers");
+        loadManagerBtn.addActionListener(e -> {
+            showPanel("ViewManager");
         });
-
-        panel.add(createManagerBtn);
-
+        panel.add(loadManagerBtn);
+        
+        JButton loadAdminBtn = new JButton("View Adminstrators");
+        loadAdminBtn.addActionListener(e -> {
+            showPanel("ViewAdmin");
+        });
+        panel.add(loadAdminBtn);
+        panel.add(logoutBtn());
+        
         return panel;
+    }
+    
+    public void showEditManagerPanel(String uid) {
+
+        Manager manager = (Manager) currentUser;
+
+        JPanel editManagerPanel
+                = manager.editManagerPanel(this, uid);
+
+        container.add(editManagerPanel, "EditManagerPanel");
+        cardMap.put("EditManagerPanel", editManagerPanel);
+        cards.show(container, "EditManagerPanel");
+    }
+    
+    public void showEditAdminPanel(String uid) {
+
+        Manager manager = (Manager) currentUser;
+
+        JPanel editAdminPanel
+                = manager.editAdminPanel(this, uid);
+
+        container.add(editAdminPanel, "EditAdminPanel");
+        cardMap.put("EditAdminPanel", editAdminPanel);
+        cards.show(container, "EditAdminPanel");
     }
 
     private JPanel attendance_officerPanel(AttendanceOfficer o) {
@@ -145,5 +178,18 @@ public class MainFrame extends JFrame {
                 Group28Assignment.main(new String[0])
             );
         }
+    }
+
+    public void refresh(String name, Supplier<JPanel> builder) {
+        JPanel old = cardMap.get(name);
+        if (old != null) {
+            container.remove(old);
+        }
+        JPanel fresh = builder.get();    
+        cardMap.put(name, fresh);
+        container.add(fresh, name);
+        cards.show(container, name);
+        container.revalidate();
+        container.repaint();
     }
 }
