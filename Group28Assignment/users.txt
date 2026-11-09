@@ -1,1 +1,12 @@
-string|string|string|b45cffe084dd3d20d928bee85e7b0f21|string|Manager|string
+UID000001|string|string|b45cffe084dd3d20d928bee85e7b0f21|string|Manager|string|true
+UID000002|string1|string@assa.ca|b45cffe084dd3d20d928bee85e7b0f21|012547863|Admin|string|false
+UID000003|string2|string|b45cffe084dd3d20d928bee85e7b0f21|string|Student|string|true
+UID000004|string3|string|b45cffe084dd3d20d928bee85e7b0f21|string|Instructor|string|false
+UID000005|string4|string|b45cffe084dd3d20d928bee85e7b0f21|string|Attendance Officer|string|false
+UID000006|string5|string|b45cffe084dd3d20d928bee85e7b0f21|string|Facility Officer|string|false
+UID000007|sa|a@a.com|8af3982673455323883c06fa59d2872a|012345678|Manager|string|true
+UID000008|sdas|asd@asd.ASd|29d5bd24f18adab917a52350b6c2483b|012541258|Manager|string|true
+UID000009|asd|sad@asd.cm|f77021277873fba475aba4cc3af40139|012547896|Manager|string|false
+UID000010|sadasasd|sad@sad.asd|a3d3391bb9561e9f09e8f7c628b9c2d9|012589637|Manager|string|true
+UID000011|fdsa|asd@asd.cda|9c1e9c14e63a7267147f08855dae1301|014523678|Admin|string|true
+UID000012|adfgdf|ads@sd.asd|7ef333e0395b7939fe9197dd57c5528e|012547836|Admin|string|false
