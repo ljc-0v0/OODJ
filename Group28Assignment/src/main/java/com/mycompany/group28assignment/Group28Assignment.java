@@ -71,7 +71,7 @@ public class Group28Assignment{
                         String storedUsername = parts[1];
                         String storedPassword = parts[3];
 
-                        if (storedUsername.equals(username) && storedPassword.equals(passwordHash) && parts[7].equals("ture")) {
+                        if (storedUsername.equals(username) && storedPassword.equals(passwordHash) && parts[7].equals("true")) {
                             loginFrame.dispose();
                             accessControl(parts[0],parts[5]);
                             found = true;
