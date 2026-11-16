@@ -42,7 +42,10 @@ public class MainFrame extends JFrame {
         } else if (currentUser instanceof Instructor instructor) {
 
             container.add(
-                new InstructorPanel(this::logout),
+                new InstructorPanel(
+                    this::logout,
+                    instructor.getUserName()
+                ),
                 "Instructor"
             );
 
