@@ -2,7 +2,8 @@
 package com.mycompany.group28assignment;
 
 import javax.swing.*;
-import javax.swing.event.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -17,27 +18,24 @@ import java.util.List;
 public class InstructorPanel extends JPanel {
 
     private final Path dataDir = Paths.get("data");
+    private final Path equipmentFile = Paths.get("equipment.txt");
     private final Path schedules = dataDir.resolve("schedules.txt");
     private final Path problems = dataDir.resolve("facility_problems.txt");
     private final Path ratings = dataDir.resolve("ratings.txt");
-    private final Path equipmentFile = Paths.get("equipment.txt");
-    private final Path idCounterFile =
-            dataDir.resolve("id_counters.properties");
+    private final Path idCounters = dataDir.resolve("instructor_id_counters.properties");
 
     private static final DateTimeFormatter DISPLAY_DATE =
             DateTimeFormatter.ofPattern("dd-MM-uuuu");
 
     private static final Color BLUE = new Color(42, 93, 151);
+    private static final Color HOVER = new Color(65, 125, 190);
     private static final Color GREEN = new Color(220, 245, 224);
     private static final Color RED = new Color(255, 225, 225);
-
-    private final String currentUsername;
-    private final Runnable logoutAction;
 
     private final String[] scheduleColumns = {
         "Class ID", "Class Name", "Discipline",
         "Date", "Time", "Capacity", "Status",
-        "Fee", "Duration (minutes)", "Created By"
+        "Fee", "Duration", "Created By"
     };
 
     private final String[] problemColumns = {
@@ -51,6 +49,8 @@ public class InstructorPanel extends JPanel {
         "Class", "Rating", "Comment"
     };
 
+    private final Runnable logoutAction;
+    private final String creatorName;
     private final CardLayout cards = new CardLayout();
     private final JPanel pages = new JPanel(cards);
 
@@ -65,8 +65,7 @@ public class InstructorPanel extends JPanel {
     private final JButton deleteButton = new JButton();
     private final JButton backButton = new JButton("Back to Menu");
 
-    private final DefaultTableModel model =
-            new DefaultTableModel() {
+    private final DefaultTableModel model = new DefaultTableModel() {
         @Override
         public boolean isCellEditable(int row, int column) {
             return false;
@@ -74,7 +73,6 @@ public class InstructorPanel extends JPanel {
     };
 
     private final JTable table = new JTable(model);
-
     private final TableRowSorter<DefaultTableModel> sorter =
             new TableRowSorter<>(model);
 
@@ -105,16 +103,12 @@ public class InstructorPanel extends JPanel {
         this(logoutAction, "");
     }
 
-    public InstructorPanel(
-            Runnable logoutAction, String username) {
-
+    public InstructorPanel(Runnable logoutAction, String creatorName) {
         this.logoutAction = logoutAction;
-        this.currentUsername =
-                username == null ? "" : username.trim();
+        this.creatorName = creatorName == null ? "" : creatorName.trim();
 
         setLayout(new BorderLayout());
-        setBorder(BorderFactory.createEmptyBorder(
-                15, 15, 15, 15));
+        setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         pages.add(createMenu(), "MENU");
         pages.add(createWorkspace(), "WORKSPACE");
@@ -124,61 +118,44 @@ public class InstructorPanel extends JPanel {
     }
 
     private JPanel createMenu() {
-
         JPanel menu = new JPanel(new BorderLayout(15, 25));
 
         JLabel title = new JLabel(
-                "Instructor Dashboard",
-                SwingConstants.CENTER);
-
-        title.setFont(new Font(
-                "SansSerif", Font.BOLD, 26));
-
+                "Instructor Dashboard", SwingConstants.CENTER);
+        title.setFont(new Font("SansSerif", Font.BOLD, 26));
         menu.add(title, BorderLayout.NORTH);
 
         JPanel buttonPanel = new JPanel(
                 new GridLayout(4, 1, 0, 15));
-
         buttonPanel.setBorder(
-                BorderFactory.createEmptyBorder(
-                        25, 65, 25, 65));
+                BorderFactory.createEmptyBorder(25, 65, 25, 65));
 
-        JButton schedulesButton =
-                new JButton("Class Schedules");
+        JButton schedulesButton = new JButton("Class Schedules");
+        JButton problemsButton = new JButton("Facility Problems");
+        JButton ratingsButton = new JButton("Instructor Ratings");
+        JButton logoutButton = new JButton("Log Out");
 
-        JButton problemsButton =
-                new JButton("Facility Problems");
+        JButton[] buttons = {
+            schedulesButton, problemsButton,
+            ratingsButton, logoutButton
+        };
 
-        JButton ratingsButton =
-                new JButton("Instructor Ratings");
-
-        JButton logoutButton =
-                new JButton("Log Out");
-
-        for (JButton button : new JButton[]{
-                schedulesButton, problemsButton,
-                ratingsButton, logoutButton}) {
-
+        for (JButton button : buttons) {
             styleButton(button);
-            button.setFont(new Font(
-                    "SansSerif", Font.BOLD, 17));
+            button.setFont(new Font("SansSerif", Font.BOLD, 17));
             buttonPanel.add(button);
         }
 
-        schedulesButton.addActionListener(
-                e -> openSection(0));
-
-        problemsButton.addActionListener(
-                e -> openSection(1));
-
-        ratingsButton.addActionListener(
-                e -> openSection(2));
+        schedulesButton.addActionListener(e -> openSection(0));
+        problemsButton.addActionListener(e -> openSection(1));
+        ratingsButton.addActionListener(e -> openSection(2));
 
         logoutButton.addActionListener(e -> {
             if (logoutAction != null) {
                 logoutAction.run();
             } else {
-                showError("Logout is available from MainFrame.");
+                JOptionPane.showMessageDialog(
+                        this, "Log Out is available from MainFrame.");
             }
         });
 
@@ -187,58 +164,48 @@ public class InstructorPanel extends JPanel {
     }
 
     private JPanel createWorkspace() {
-
-        JPanel workspace =
-                new JPanel(new BorderLayout(10, 10));
+        JPanel workspace = new JPanel(new BorderLayout(10, 10));
 
         JLabel heading = new JLabel(
-                "Instructor Dashboard",
-                SwingConstants.CENTER);
-
-        heading.setFont(new Font(
-                "SansSerif", Font.BOLD, 22));
-
+                "Instructor Dashboard", SwingConstants.CENTER);
+        heading.setFont(new Font("SansSerif", Font.BOLD, 22));
         workspace.add(heading, BorderLayout.NORTH);
 
-        JPanel main = new JPanel(
-                new BorderLayout(10, 10));
-
+        JPanel main = new JPanel(new BorderLayout(10, 10));
         JPanel top = new JPanel(
                 new FlowLayout(FlowLayout.LEFT, 10, 8));
 
         styleButton(backButton);
+        backButton.addActionListener(e -> cards.show(pages, "MENU"));
 
-        backButton.addActionListener(
-                e -> cards.show(pages, "MENU"));
-
-        sectionTitle.setFont(new Font(
-                "SansSerif", Font.BOLD, 17));
+        sectionTitle.setFont(
+                new Font("SansSerif", Font.BOLD, 17));
 
         top.add(backButton);
+        top.add(Box.createHorizontalStrut(10));
         top.add(sectionTitle);
+        top.add(Box.createHorizontalStrut(15));
         top.add(new JLabel("Search ID / Name:"));
         top.add(searchField);
 
         main.add(top, BorderLayout.NORTH);
 
         table.setRowHeight(30);
+        table.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        table.getTableHeader().setFont(
+                new Font("SansSerif", Font.BOLD, 13));
+
         table.setSelectionMode(
                 ListSelectionModel.SINGLE_SELECTION);
-
         table.setRowSorter(sorter);
         table.setFillsViewportHeight(true);
 
-table.setAutoResizeMode(
-        JTable.AUTO_RESIZE_ALL_COLUMNS);
-
         table.setDefaultRenderer(
-                Object.class,
-                new DefaultTableCellRenderer() {
+                Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(
-                    JTable t, Object value,
-                    boolean selected, boolean focused,
-                    int row, int column) {
+                    JTable t, Object value, boolean selected,
+                    boolean focused, int row, int column) {
 
                 Component component =
                         super.getTableCellRendererComponent(
@@ -250,9 +217,7 @@ table.setAutoResizeMode(
                     component.setBackground(Color.WHITE);
 
                     if (section == 0) {
-                        int modelRow =
-                                t.convertRowIndexToModel(row);
-
+                        int modelRow = t.convertRowIndexToModel(row);
                         String status = String.valueOf(
                                 model.getValueAt(modelRow, 6));
 
@@ -268,18 +233,17 @@ table.setAutoResizeMode(
             }
         });
 
-        main.add(new JScrollPane(table),
-                BorderLayout.CENTER);
+        main.add(new JScrollPane(table), BorderLayout.CENTER);
 
-        JPanel bottom = new JPanel(
-                new BorderLayout());
-
+        JPanel bottom = new JPanel(new BorderLayout());
         JPanel actions = new JPanel(
                 new FlowLayout(FlowLayout.LEFT));
 
-        for (JButton button : new JButton[]{
-                addButton, editButton, deleteButton}) {
+        JButton[] actionButtons = {
+            addButton, editButton, deleteButton
+        };
 
+        for (JButton button : actionButtons) {
             styleButton(button);
             actions.add(button);
         }
@@ -290,25 +254,23 @@ table.setAutoResizeMode(
         main.add(bottom, BorderLayout.SOUTH);
         workspace.add(main, BorderLayout.CENTER);
 
-        addButton.addActionListener(
-                e -> addRecord());
-
-        editButton.addActionListener(
-                e -> editRecord());
-
-        deleteButton.addActionListener(
-                e -> deleteRecord());
+        addButton.addActionListener(e -> addRecord());
+        editButton.addActionListener(e -> editRecord());
+        deleteButton.addActionListener(e -> deleteRecord());
 
         searchField.getDocument().addDocumentListener(
                 new DocumentListener() {
+            @Override
             public void insertUpdate(DocumentEvent e) {
                 filter();
             }
 
+            @Override
             public void removeUpdate(DocumentEvent e) {
                 filter();
             }
 
+            @Override
             public void changedUpdate(DocumentEvent e) {
                 filter();
             }
@@ -319,7 +281,6 @@ table.setAutoResizeMode(
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2
                         && table.getSelectedRow() >= 0) {
-
                     if (section == 2) {
                         viewRatingDetails();
                     } else {
@@ -333,20 +294,29 @@ table.setAutoResizeMode(
     }
 
     private void styleButton(JButton button) {
-
         button.setOpaque(true);
         button.setContentAreaFilled(true);
         button.setBackground(BLUE);
         button.setForeground(Color.WHITE);
         button.setFocusPainted(false);
-
         button.setBorder(
-                BorderFactory.createEmptyBorder(
-                        12, 16, 12, 16));
+                BorderFactory.createEmptyBorder(12, 16, 12, 16));
+        button.setCursor(Cursor.getPredefinedCursor(
+                Cursor.HAND_CURSOR));
 
-        button.setCursor(
-                Cursor.getPredefinedCursor(
-                        Cursor.HAND_CURSOR));
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (button.isEnabled()) {
+                    button.setBackground(HOVER);
+                }
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(BLUE);
+            }
+        });
     }
 
     private void openSection(int selectedSection) {
@@ -356,42 +326,86 @@ table.setAutoResizeMode(
     }
 
     private Path currentFile() {
-        if (section == 0) return schedules;
-        if (section == 1) return problems;
+        if (section == 0) {
+            return schedules;
+        }
+        if (section == 1) {
+            return problems;
+        }
         return ratings;
     }
 
     private String[] columns() {
-        if (section == 0) return scheduleColumns;
-        if (section == 1) return problemColumns;
+        if (section == 0) {
+            return scheduleColumns;
+        }
+        if (section == 1) {
+            return problemColumns;
+        }
         return ratingColumns;
     }
 
     private void updateButtons() {
-
         if (section == 0) {
             sectionTitle.setText("Class Schedules");
             addButton.setText("Add Class");
             deleteButton.setText("Delete Class");
-
         } else if (section == 1) {
             sectionTitle.setText("Facility Problems");
             addButton.setText("Add Problem");
             deleteButton.setText("Delete Problem");
-
         } else {
             sectionTitle.setText("Instructor Ratings");
         }
 
         boolean editable = section != 2;
-
         addButton.setVisible(editable);
         editButton.setVisible(editable);
         deleteButton.setVisible(editable);
     }
 
-    private void loadRecords() {
+    private List<Equipment> loadEquipment() throws IOException {
+        if (!Files.isRegularFile(equipmentFile)) {
+            throw new IOException(
+                    "equipment.txt was not found in the project root. "
+                    + "Get the latest file from your teammate's GitHub repository.");
+        }
 
+        List<Equipment> result = new ArrayList<>();
+        Set<String> ids = new HashSet<>();
+
+        for (String line : Files.readAllLines(
+                equipmentFile, StandardCharsets.UTF_8)) {
+
+            if (line.trim().isEmpty()) {
+                continue;
+            }
+
+            String[] p = line.split("\\|", -1);
+
+            if (p.length < 7) {
+                continue;
+            }
+
+            String id = p[0].trim();
+            String name = p[1].trim();
+            String location = p[6].trim();
+
+            if (!id.isEmpty() && !name.isEmpty()
+                    && ids.add(id)) {
+                result.add(new Equipment(id, name, location));
+            }
+        }
+
+        if (result.isEmpty()) {
+            throw new IOException(
+                    "No valid equipment records found in equipment.txt.");
+        }
+
+        return result;
+    }
+
+    private void loadRecords() {
         records.clear();
         model.setRowCount(0);
         model.setColumnIdentifiers(columns());
@@ -402,22 +416,18 @@ table.setAutoResizeMode(
             Files.createDirectories(dataDir);
 
             if (Files.exists(currentFile())) {
-
                 List<String> lines = Files.readAllLines(
-                        currentFile(),
-                        StandardCharsets.UTF_8);
+                        currentFile(), StandardCharsets.UTF_8);
 
                 int number = 1;
 
                 for (String line : lines) {
+                    if (line.trim().isEmpty()) {
+                        continue;
+                    }
 
-                    if (line.isBlank()) continue;
-
-                    String[] parts =
-                            line.split("\\s*\\|\\s*", -1);
-
-                    String[] record =
-                            normalize(parts, number);
+                    String[] parts = line.split("\\s*\\|\\s*", -1);
+                    String[] record = normalize(parts, number);
 
                     if (record != null) {
                         records.add(record);
@@ -430,53 +440,34 @@ table.setAutoResizeMode(
             displayRecords();
 
         } catch (IOException ex) {
-            showError("Cannot load records: "
-                    + ex.getMessage());
+            showError("Cannot load records: " + ex.getMessage());
         }
     }
 
-    private String[] normalize(
-            String[] p, int number) {
-
+    private String[] normalize(String[] p, int number) {
         if (section == 0) {
-
             if (p.length >= 7) {
-
-                String[] result = new String[10];
-                Arrays.fill(result, "");
-
-                System.arraycopy(
-                        p, 0, result, 0,
-                        Math.min(p.length, 10));
-
-                if (p.length < 8) result[7] = "0.00";
-                if (p.length < 9) result[8] = "60";
-
-                return result;
+                String[] row = Arrays.copyOf(p, 10);
+                if (row[7] == null || row[7].isBlank()) row[7] = "0";
+                if (row[8] == null || row[8].isBlank()) row[8] = "60";
+                if (row[9] == null) row[9] = "";
+                return row;
             }
 
             if (p.length == 3) {
                 return new String[]{
                     String.format("C%03d", number),
                     p[0], "General", p[1], p[2],
-                    "20", "Available", "0.00",
-                    "60", ""
+                    "20", "Available", "0", "60", ""
                 };
             }
         }
 
         if (section == 1) {
-
             if (p.length >= 7) {
-
-                String[] result = new String[8];
-                Arrays.fill(result, "");
-
-                System.arraycopy(
-                        p, 0, result, 0,
-                        Math.min(p.length, 8));
-
-                return result;
+                String[] row = Arrays.copyOf(p, 8);
+                if (row[7] == null) row[7] = "";
+                return row;
             }
 
             if (p.length == 5) {
@@ -489,27 +480,22 @@ table.setAutoResizeMode(
             if (p.length == 3) {
                 return new String[]{
                     String.format("P%03d", number),
-                    "", p[0], "", p[1],
-                    p[2], "Open", ""
+                    "", p[0], "", p[1], p[2], "Open", ""
                 };
             }
         }
 
         if (section == 2) {
-
             if (p.length == 6) {
                 return Arrays.copyOf(p, 6);
             }
 
             String[] result = new String[6];
             Arrays.fill(result, "");
+            result[0] = String.format("R%03d", number);
 
-            result[0] = String.format(
-                    "R%03d", number);
-
-            for (int i = 0;
-                    i < Math.min(p.length, 5); i++) {
-
+            int limit = Math.min(p.length, 5);
+            for (int i = 0; i < limit; i++) {
                 result[i + 1] = p[i];
             }
 
@@ -520,16 +506,13 @@ table.setAutoResizeMode(
     }
 
     private void displayRecords() {
-
         model.setRowCount(0);
 
         for (String[] record : records) {
-
             String[] display = record.clone();
 
             if (section == 0) {
                 display[3] = formatDate(record[3]);
-
             } else if (section == 1) {
                 display[5] = formatDate(record[5]);
             }
@@ -542,25 +525,20 @@ table.setAutoResizeMode(
 
     private String formatDate(String value) {
         try {
-            return LocalDate.parse(value)
-                    .format(DISPLAY_DATE);
+            return LocalDate.parse(value).format(DISPLAY_DATE);
         } catch (Exception ex) {
             return value;
         }
     }
 
     private void filter() {
-
         String keyword = searchField.getText().trim();
 
         if (keyword.isEmpty()) {
             sorter.setRowFilter(null);
         } else {
-            sorter.setRowFilter(
-                    RowFilter.regexFilter(
-                            "(?i)"
-                            + java.util.regex.Pattern.quote(
-                                    keyword)));
+            sorter.setRowFilter(RowFilter.regexFilter(
+                    "(?i)" + java.util.regex.Pattern.quote(keyword)));
         }
 
         countLabel.setText(
@@ -568,328 +546,188 @@ table.setAutoResizeMode(
                 + " / " + records.size());
     }
 
-    private boolean canModify(String[] record) {
-
-        if (currentUsername.isBlank()) {
-            showError("No logged-in username found.");
-            return false;
-        }
-
-        String owner =
-                record[record.length - 1].trim();
-
-        if (owner.isBlank()) {
-            showError(
-                    "This older record has no Created By value. "
-                    + "Editing and deleting are disabled.");
-            return false;
-        }
-
-        if (!owner.equals(currentUsername)) {
-
-            showError(
-                    "Access Denied!\n"
-                    + "Created By: " + owner + "\n"
-                    + "Logged In As: " + currentUsername + "\n\n"
-                    + "Only the creator can edit or delete "
-                    + "this record.");
-
-            return false;
-        }
-
-        return true;
-    }
-
-    private List<Equipment> loadEquipment()
-            throws IOException {
-
-        if (!Files.isRegularFile(equipmentFile)) {
-            throw new IOException(
-                    "equipment.txt was not found "
-                    + "in the project root.");
-        }
-
-        List<Equipment> result = new ArrayList<>();
-        Set<String> ids = new HashSet<>();
-
-        for (String line : Files.readAllLines(
-                equipmentFile,
-                StandardCharsets.UTF_8)) {
-
-            if (line.isBlank()) continue;
-
-            String[] p = line.split("\\|", -1);
-
-            if (p.length < 7) continue;
-
-            String id = p[0].trim();
-            String name = p[1].trim();
-            String location = p[6].trim();
-
-            if (!id.isEmpty()
-                    && !name.isEmpty()
-                    && ids.add(id)) {
-
-                result.add(new Equipment(
-                        id, name, location));
-            }
-        }
-
-        if (result.isEmpty()) {
-            throw new IOException(
-                    "No valid equipment records found.");
-        }
-
-        return result;
-    }
-
-    private int maxExistingID(String prefix)
-            throws IOException {
-
+    private int highestExistingID(String prefix) {
         int max = 0;
-
-        Path file = prefix.equals("C")
-                ? schedules : problems;
-
-        if (!Files.exists(file)) return 0;
-
-        for (String line : Files.readAllLines(
-                file, StandardCharsets.UTF_8)) {
-
-            String[] parts = line.split("\\|", -1);
-
-            if (parts.length == 0) continue;
-
-            String id = parts[0].trim();
-
-            if (id.matches(prefix + "\\d+")) {
-
-                try {
-                    max = Math.max(
-                            max,
-                            Integer.parseInt(
-                                    id.substring(1)));
-                } catch (NumberFormatException ignored) {
+        Path file = "C".equals(prefix) ? schedules : problems;
+        try {
+            if (Files.exists(file)) {
+                for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
+                    String id = line.split("\\|", -1)[0].trim();
+                    if (id.matches(prefix + "\\d+")) {
+                        max = Math.max(max, Integer.parseInt(id.substring(1)));
+                    }
                 }
             }
+        } catch (IOException ex) {
+            showError("Cannot read existing IDs: " + ex.getMessage());
         }
-
         return max;
     }
 
-    private Properties readCounters()
-            throws IOException {
-
+    private int savedCounter(String prefix) throws IOException {
         Properties properties = new Properties();
-
-        if (Files.exists(idCounterFile)) {
-
-            try (java.io.InputStream in =
-                    Files.newInputStream(idCounterFile)) {
-
+        if (Files.exists(idCounters)) {
+            try (java.io.InputStream in = Files.newInputStream(idCounters)) {
                 properties.load(in);
             }
         }
-
-        return properties;
+        // Respect counters from earlier project versions as well.
+        Path legacyCounters = Paths.get("id_counters.properties");
+        if (Files.exists(legacyCounters)) {
+            Properties legacy = new Properties();
+            try (java.io.InputStream in = Files.newInputStream(legacyCounters)) {
+                legacy.load(in);
+            }
+            String oldValue = legacy.getProperty(prefix);
+            if (oldValue != null) {
+                try {
+                    int oldMax = Integer.parseInt(oldValue.trim());
+                    int newMax = Integer.parseInt(properties.getProperty(prefix, "0"));
+                    return Math.max(oldMax, newMax);
+                } catch (NumberFormatException ex) {
+                    throw new IOException("Invalid legacy ID counter", ex);
+                }
+            }
+        }
+        try {
+            return Integer.parseInt(properties.getProperty(prefix, "0"));
+        } catch (NumberFormatException ex) {
+            throw new IOException("Invalid saved ID counter for " + prefix, ex);
+        }
     }
 
     private String nextID() {
-
         String prefix = section == 0 ? "C" : "P";
-
         try {
-            Properties properties = readCounters();
-
-            int stored = Integer.parseInt(
-                    properties.getProperty(prefix, "0"));
-
-            int next = Math.max(
-                    stored, maxExistingID(prefix)) + 1;
-
-            return String.format(
-                    "%s%03d", prefix, next);
-
-        } catch (Exception ex) {
-            showError("Cannot generate ID: "
-                    + ex.getMessage());
+            int highest = Math.max(highestExistingID(prefix), savedCounter(prefix));
+            return String.format("%s%03d", prefix, highest + 1);
+        } catch (IOException ex) {
+            showError("Cannot generate ID: " + ex.getMessage());
             return null;
         }
     }
 
-    private void reserveID(String id)
-            throws IOException {
-
-        String prefix = id.substring(0, 1);
-        int number = Integer.parseInt(
-                id.substring(1));
-
+    private void rememberID(String id) throws IOException {
+        if (id == null || !id.matches("[CP]\\d+")) {
+            throw new IOException("Invalid record ID");
+        }
         Files.createDirectories(dataDir);
-
-        Properties properties = readCounters();
-
-        int previous = Integer.parseInt(
-                properties.getProperty(prefix, "0"));
-
-        properties.setProperty(
-                prefix,
-                String.valueOf(
-                        Math.max(previous, number)));
-
-        try (java.io.OutputStream out =
-                Files.newOutputStream(
-                        idCounterFile,
-                        StandardOpenOption.CREATE,
-                        StandardOpenOption.TRUNCATE_EXISTING)) {
-
-            properties.store(
-                    out, "Highest assigned IDs");
+        Properties properties = new Properties();
+        if (Files.exists(idCounters)) {
+            try (java.io.InputStream in = Files.newInputStream(idCounters)) {
+                properties.load(in);
+            }
+        }
+        String prefix = id.substring(0, 1);
+        int previous;
+        try {
+            previous = Integer.parseInt(properties.getProperty(prefix, "0"));
+        } catch (NumberFormatException ex) {
+            throw new IOException("Invalid ID counter", ex);
+        }
+        int next = Integer.parseInt(id.substring(1));
+        properties.setProperty(prefix, String.valueOf(Math.max(previous, next)));
+        try (java.io.OutputStream out = Files.newOutputStream(idCounters)) {
+            properties.store(out, "Highest allocated Instructor record IDs - do not reset");
         }
     }
 
     private JSpinner createDateSpinner(String value) {
+        Date initialDate = new Date();
 
-        Date initial = new Date();
-
-        try {
-            if (value != null && !value.isBlank()) {
-                initial = Date.from(
-                        LocalDate.parse(value)
-                                .atStartOfDay(
-                                        ZoneId.systemDefault())
-                                .toInstant());
+        if (value != null && !value.isBlank()) {
+            try {
+                LocalDate date = LocalDate.parse(value);
+                initialDate = Date.from(
+                        date.atStartOfDay(
+                                ZoneId.systemDefault()).toInstant());
+            } catch (Exception ignored) {
             }
-        } catch (Exception ignored) {
         }
 
-        JSpinner spinner = new JSpinner(
-                new SpinnerDateModel(
-                        initial, null, null,
-                        Calendar.DAY_OF_MONTH));
+        SpinnerDateModel dateModel = new SpinnerDateModel(
+                initialDate, null, null, Calendar.DAY_OF_MONTH);
 
+        JSpinner spinner = new JSpinner(dateModel);
         spinner.setEditor(
-                new JSpinner.DateEditor(
-                        spinner, "dd-MM-yyyy"));
+                new JSpinner.DateEditor(spinner, "dd-MM-yyyy"));
 
         return spinner;
     }
 
     private JSpinner createTimeSpinner(String value) {
+        Date initialDate = new Date();
 
-        Date initial = new Date();
-
-        try {
-            if (value != null && !value.isBlank()) {
-
+        if (value != null && !value.isBlank()) {
+            try {
                 LocalTime time = LocalTime.parse(value);
-
-                initial = Date.from(
-                        LocalDate.now()
-                                .atTime(time)
-                                .atZone(
-                                        ZoneId.systemDefault())
-                                .toInstant());
+                LocalDateTime dateTime = LocalDate.now().atTime(time);
+                initialDate = Date.from(
+                        dateTime.atZone(
+                                ZoneId.systemDefault()).toInstant());
+            } catch (Exception ignored) {
             }
-        } catch (Exception ignored) {
         }
 
-        JSpinner spinner = new JSpinner(
-                new SpinnerDateModel(
-                        initial, null, null,
-                        Calendar.MINUTE));
+        SpinnerDateModel timeModel = new SpinnerDateModel(
+                initialDate, null, null, Calendar.MINUTE);
 
+        JSpinner spinner = new JSpinner(timeModel);
         spinner.setEditor(
-                new JSpinner.DateEditor(
-                        spinner, "HH:mm"));
+                new JSpinner.DateEditor(spinner, "HH:mm"));
 
         return spinner;
     }
 
-    private String[] showScheduleForm(
-            String[] existing) {
-
-        String[] labels = scheduleColumns;
-
-        JPanel form = new JPanel(
-                new GridLayout(
-                        labels.length, 2, 8, 8));
-
-        JComponent[] inputs =
-                new JComponent[labels.length];
-
-        String generatedID =
-                existing == null ? nextID() : null;
-
-        if (existing == null && generatedID == null) {
+    private String[] showScheduleForm(String[] existing) {
+        if (creatorName.isBlank()) {
+            showError("Current login username is unavailable. Please reconnect login to MainFrame.");
             return null;
         }
+        String[] labels = scheduleColumns;
+        if (existing == null && nextID() == null) return null;
+
+        JPanel form = new JPanel(
+                new GridLayout(labels.length, 2, 8, 8));
+
+        JComponent[] inputs = new JComponent[labels.length];
 
         for (int i = 0; i < labels.length; i++) {
-
-            String value = existing == null
-                    ? "" : existing[i];
+            String value = existing == null ? "" : existing[i];
 
             if (i == 0) {
-
-                JTextField field = new JTextField(
-                        existing == null
-                                ? generatedID : value);
-
-                field.setEditable(false);
-                inputs[i] = field;
+                JTextField idField = new JTextField(
+                        existing == null ? nextID() : value, 20);
+                idField.setEditable(false);
+                inputs[i] = idField;
 
             } else if (i == 3) {
-
                 inputs[i] = createDateSpinner(value);
 
             } else if (i == 4) {
-
                 inputs[i] = createTimeSpinner(value);
 
+            } else if (i == 9) {
+                JTextField creator = new JTextField(existing == null ? creatorName : value, 20);
+                creator.setEditable(false);
+                inputs[i] = creator;
+
             } else if (i == 6) {
-
-                JComboBox<String> status =
-                        new JComboBox<>(
-                                new String[]{
-                                    "Available",
-                                    "Cancelled"
-                                });
-
+                JComboBox<String> status = new JComboBox<>(
+                        new String[]{"Available", "Cancelled"});
                 status.setSelectedItem(
-                        existing == null
-                                ? "Available" : value);
-
+                        existing == null ? "Available" : value);
                 inputs[i] = status;
 
             } else {
-
                 if (existing == null && i == 5) {
                     value = "20";
-                }
-
-                if (existing == null && i == 7) {
-                    value = "0.00";
-                }
-
-                if (existing == null && i == 8) {
+                } else if (existing == null && i == 7) {
+                    value = "0";
+                } else if (existing == null && i == 8) {
                     value = "60";
                 }
-
-                if (i == 9) {
-
-                    value = existing == null
-                            ? currentUsername
-                            : existing[9];
-                }
-
-                JTextField field =
-                        new JTextField(value, 20);
-
-                if (i == 9) {
-                    field.setEditable(false);
-                }
-
-                inputs[i] = field;
+                inputs[i] = new JTextField(value, 20);
             }
 
             form.add(new JLabel(labels[i] + ":"));
@@ -898,23 +736,18 @@ table.setAutoResizeMode(
 
         Object[] options = existing == null
                 ? new Object[]{"Save", "Cancel"}
-                : new Object[]{
-                    "Save", "Delete", "Cancel"
-                };
+                : new Object[]{"Save", "Delete", "Cancel"};
 
         while (true) {
-
             int answer = JOptionPane.showOptionDialog(
                     this, form,
                     existing == null
-                            ? "Add New Class"
-                            : "Update Class",
+                            ? "Add New Class" : "Update Class",
                     JOptionPane.DEFAULT_OPTION,
                     JOptionPane.PLAIN_MESSAGE,
                     null, options, options[0]);
 
-            if (answer < 0
-                    || answer == options.length - 1) {
+            if (answer < 0 || answer == options.length - 1) {
                 return null;
             }
 
@@ -923,99 +756,62 @@ table.setAutoResizeMode(
                 return null;
             }
 
-            String[] values =
-                    new String[labels.length];
+            String[] values = new String[labels.length];
 
             try {
                 for (int i = 0; i < labels.length; i++) {
-
                     if (inputs[i] instanceof JSpinner) {
-
-                        JSpinner spinner =
-                                (JSpinner) inputs[i];
-
+                        JSpinner spinner = (JSpinner) inputs[i];
                         spinner.commitEdit();
 
-                        Date date =
-                                (Date) spinner.getValue();
+                        Date date = (Date) spinner.getValue();
 
                         if (i == 3) {
-
                             values[i] = date.toInstant()
-                                    .atZone(
-                                            ZoneId.systemDefault())
-                                    .toLocalDate()
-                                    .toString();
-
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate().toString();
                         } else {
-
                             values[i] = date.toInstant()
-                                    .atZone(
-                                            ZoneId.systemDefault())
+                                    .atZone(ZoneId.systemDefault())
                                     .toLocalTime()
-                                    .format(
-                                            DateTimeFormatter
-                                                    .ofPattern("HH:mm"));
+                                    .format(DateTimeFormatter
+                                            .ofPattern("HH:mm"));
                         }
 
-                    } else if (inputs[i]
-                            instanceof JComboBox) {
-
+                    } else if (inputs[i] instanceof JComboBox) {
                         values[i] = String.valueOf(
                                 ((JComboBox<?>) inputs[i])
                                         .getSelectedItem());
-
                     } else {
-
-                        values[i] =
-                                ((JTextField) inputs[i])
-                                        .getText().trim();
+                        values[i] = ((JTextField) inputs[i])
+                                .getText().trim();
                     }
 
-                    validateField(values[i]);
+                    if (i != 9) {
+                        validateField(values[i]);
+                    }
                 }
 
-                values[9] = existing == null
-                        ? currentUsername
-                        : existing[9];
-
-                if (LocalDate.parse(values[3])
-                        .isBefore(LocalDate.now())) {
-
-                    throw new IllegalArgumentException(
-                            "Class date must be today "
-                            + "or a future date.");
-                }
-
+                LocalDate classDate = LocalDate.parse(values[3]);
                 LocalTime.parse(values[4]);
+                if (classDate.isBefore(LocalDate.now())
+                        && (existing == null || !values[3].equals(existing[3]))) {
+                    throw new IllegalArgumentException(
+                            "Class date cannot be before today.");
+                }
 
-                int capacity =
-                        Integer.parseInt(values[5]);
+                int capacity = Integer.parseInt(values[5]);
 
                 if (capacity <= 0) {
                     throw new IllegalArgumentException(
                             "Capacity must be positive.");
                 }
 
-                java.math.BigDecimal fee =
-                        new java.math.BigDecimal(
-                                values[7]);
-
-                if (fee.signum() < 0) {
-                    throw new IllegalArgumentException(
-                            "Fee cannot be negative.");
+                double fee = Double.parseDouble(values[7]);
+                int duration = Integer.parseInt(values[8]);
+                if (fee < 0 || duration <= 0) {
+                    throw new IllegalArgumentException("Fee must be non-negative and duration must be positive.");
                 }
-
-                int duration =
-                        Integer.parseInt(values[8]);
-
-                if (duration <= 0) {
-                    throw new IllegalArgumentException(
-                            "Duration must be positive.");
-                }
-
-                values[7] = fee.toPlainString();
-
                 return values;
 
             } catch (Exception ex) {
@@ -1026,99 +822,68 @@ table.setAutoResizeMode(
         }
     }
 
-    private String[] showProblemForm(
-            String[] existing) {
-
+    private String[] showProblemForm(String[] existing) {
+        if (creatorName.isBlank()) {
+            showError("Current login username is unavailable. Please reconnect login to MainFrame.");
+            return null;
+        }
         List<Equipment> equipment;
 
         try {
             equipment = loadEquipment();
-
         } catch (IOException ex) {
             showError(ex.getMessage());
             return null;
         }
 
-        JPanel form = new JPanel(
-                new GridLayout(7, 2, 8, 8));
+        if (existing == null && nextID() == null) return null;
+        JPanel form = new JPanel(new GridLayout(6, 2, 8, 8));
 
-        String problemID = existing == null
-                ? nextID() : existing[0];
-
-        if (problemID == null) return null;
-
-        JTextField idField =
-                new JTextField(problemID);
-
+        JTextField idField = new JTextField(
+                existing == null ? nextID() : existing[0]);
         idField.setEditable(false);
 
-        JComboBox<Equipment> choose =
-                new JComboBox<>(
-                        equipment.toArray(
-                                new Equipment[0]));
+        JComboBox<Equipment> choose = new JComboBox<>(
+                equipment.toArray(new Equipment[0]));
 
         JLabel nameLabel = new JLabel("-");
         JLabel locationLabel = new JLabel("-");
 
-        JTextField descriptionField =
-                new JTextField(
-                        existing == null
-                                ? "" : existing[4], 20);
+        JTextField descriptionField = new JTextField(
+                existing == null ? "" : existing[4], 20);
 
-        JTextField dateField =
-                new JTextField(
-                        formatDate(
-                                existing == null
-                                        ? LocalDate.now().toString()
-                                        : existing[5]));
+        JSpinner dateSpinner = createDateSpinner(
+                existing == null ? LocalDate.now().toString() : existing[5]);
+        dateSpinner.setEnabled(false);
 
-        dateField.setEditable(false);
-
-        JComboBox<String> statusBox =
-                new JComboBox<>(
-                        new String[]{
-                            "Open",
-                            "In Progress",
-                            "Resolved"
-                        });
-
-        JTextField createdByField =
-                new JTextField(
-                        existing == null
-                                ? currentUsername
-                                : existing[7]);
-
-        createdByField.setEditable(false);
+        JComboBox<String> statusBox = new JComboBox<>(
+                new String[]{"Open", "In Progress", "Resolved"});
 
         if (existing != null) {
             statusBox.setSelectedItem(existing[6]);
         }
 
         choose.addActionListener(e -> {
-
             Equipment selected =
                     (Equipment) choose.getSelectedItem();
 
             nameLabel.setText(
-                    selected == null
-                            ? "-" : selected.name);
-
+                    selected == null ? "-" : selected.name);
             locationLabel.setText(
-                    selected == null
-                            ? "-" : selected.location);
+                    selected == null ? "-" : selected.location);
         });
 
-        choose.setSelectedIndex(-1);
-
         if (existing != null) {
+            choose.setSelectedIndex(-1);
 
             for (Equipment item : equipment) {
-
                 if (item.id.equals(existing[1])) {
                     choose.setSelectedItem(item);
                     break;
                 }
             }
+        } else {
+            choose.setSelectedIndex(-1);
         }
 
         form.add(new JLabel("Problem ID:"));
@@ -1137,34 +902,32 @@ table.setAutoResizeMode(
         form.add(descriptionField);
 
         form.add(new JLabel("Date:"));
-        form.add(dateField);
+        form.add(dateSpinner);
 
-        form.add(new JLabel("Created By:"));
-        form.add(createdByField);
-
-        JPanel completeForm =
-                new JPanel(new BorderLayout(8, 8));
-
-        completeForm.add(
-                form, BorderLayout.CENTER);
+        JPanel completeForm = new JPanel(new BorderLayout(8, 8));
+        completeForm.add(form, BorderLayout.CENTER);
 
         JPanel statusPanel = new JPanel(
                 new FlowLayout(FlowLayout.LEFT));
-
         statusPanel.add(new JLabel("Status:"));
         statusPanel.add(statusBox);
+        completeForm.add(statusPanel, BorderLayout.SOUTH);
 
-        completeForm.add(
-                statusPanel, BorderLayout.SOUTH);
+        if (existing != null && existing[1].isBlank()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "This is an older problem record.\n"
+                    + "Please select its correct Equipment ID.\n"
+                    + "The equipment name alone is not enough.",
+                    "Link Equipment",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
 
         Object[] options = existing == null
                 ? new Object[]{"Save", "Cancel"}
-                : new Object[]{
-                    "Save", "Delete", "Cancel"
-                };
+                : new Object[]{"Save", "Delete", "Cancel"};
 
         while (true) {
-
             int answer = JOptionPane.showOptionDialog(
                     this, completeForm,
                     existing == null
@@ -1174,8 +937,7 @@ table.setAutoResizeMode(
                     JOptionPane.PLAIN_MESSAGE,
                     null, options, options[0]);
 
-            if (answer < 0
-                    || answer == options.length - 1) {
+            if (answer < 0 || answer == options.length - 1) {
                 return null;
             }
 
@@ -1190,28 +952,18 @@ table.setAutoResizeMode(
 
                 if (selected == null) {
                     throw new IllegalArgumentException(
-                            "Please select the exact "
-                            + "Equipment ID.");
+                            "Please select the exact Equipment ID.");
                 }
 
                 String description =
                         descriptionField.getText().trim();
-
                 validateField(description);
 
-                String dateValue =
-                        existing == null
-                                ? LocalDate.now().toString()
-                                : existing[5];
+                String dateValue = existing == null
+                        ? LocalDate.now().toString() : existing[5];
 
                 String status = String.valueOf(
                         statusBox.getSelectedItem());
-
-                String owner = existing == null
-                        ? currentUsername
-                        : existing[7];
-
-                validateField(owner);
 
                 return new String[]{
                     idField.getText(),
@@ -1221,7 +973,7 @@ table.setAutoResizeMode(
                     description,
                     dateValue,
                     status,
-                    owner
+                    existing == null ? creatorName : existing[7]
                 };
 
             } catch (Exception ex) {
@@ -1233,26 +985,17 @@ table.setAutoResizeMode(
     }
 
     private void validateField(String value) {
-
-        if (value == null
-                || value.isBlank()
+        if (value == null || value.isBlank()
                 || value.contains("|")
                 || value.contains("\n")
                 || value.contains("\r")) {
-
             throw new IllegalArgumentException(
                     "Complete all fields. Do not use |.");
         }
     }
 
     private void addRecord() {
-
-        if (section == 2) return;
-
-        if (currentUsername.isBlank()) {
-            showError(
-                    "Cannot add record: "
-                    + "No logged-in username found.");
+        if (section == 2) {
             return;
         }
 
@@ -1260,21 +1003,22 @@ table.setAutoResizeMode(
                 ? showScheduleForm(null)
                 : showProblemForm(null);
 
-        if (result == null) return;
-
-        try {
-            reserveID(result[0]);
+        if (result != null) {
             records.add(result);
-            saveRecords();
-
-        } catch (IOException ex) {
-            showError("Cannot reserve ID: "
-                    + ex.getMessage());
+            if (saveRecords()) {
+                try {
+                    rememberID(result[0]);
+                } catch (IOException ex) {
+                    showError("Record saved, but ID counter could not be updated: "
+                            + ex.getMessage());
+                }
+            } else {
+                records.remove(result);
+            }
         }
     }
 
     private int selectedIndex() {
-
         int viewRow = table.getSelectedRow();
 
         if (viewRow < 0) {
@@ -1282,45 +1026,50 @@ table.setAutoResizeMode(
             return -1;
         }
 
-        return table.convertRowIndexToModel(
-                viewRow);
+        return table.convertRowIndexToModel(viewRow);
     }
 
     private void editRecord() {
-
-        if (section == 2) return;
+        if (section == 2) {
+            return;
+        }
 
         int index = selectedIndex();
 
-        if (index < 0) return;
+        if (index < 0) {
+            return;
+        }
 
         String[] original = records.get(index);
-
-        if (!canModify(original)) return;
+        if (!canEdit(original)) return;
 
         String[] updated = section == 0
                 ? showScheduleForm(original)
                 : showProblemForm(original);
 
         if (updated != null) {
-
-            updated[updated.length - 1] =
-                    original[original.length - 1];
-
             records.set(index, updated);
             saveRecords();
         }
     }
 
-    private void deleteExisting(
-            String[] existing) {
+    private boolean canEdit(String[] record) {
+        int ownerIndex = section == 0 ? 9 : 7;
+        if (section == 2 || record.length <= ownerIndex) return false;
+        String owner = record[ownerIndex] == null ? "" : record[ownerIndex].trim();
+        if (creatorName.isBlank() || owner.isBlank()
+                || !owner.equalsIgnoreCase(creatorName)) {
+            showError("Only the creator of this record can modify it.");
+            return false;
+        }
+        return true;
+    }
 
-        if (!canModify(existing)) return;
-
+    private void deleteExisting(String[] existing) {
+        if (!canEdit(existing)) return;
         int answer = JOptionPane.showConfirmDialog(
                 this,
-                "Permanently delete "
-                        + existing[0] + "?",
+                "Permanently delete " + existing[0] + "?",
                 "Confirm Delete",
                 JOptionPane.YES_NO_OPTION);
 
@@ -1331,32 +1080,31 @@ table.setAutoResizeMode(
     }
 
     private void deleteRecord() {
-
-        if (section == 2) return;
+        if (section == 2) {
+            return;
+        }
 
         int index = selectedIndex();
 
-        if (index < 0) return;
+        if (index < 0) {
+            return;
+        }
 
         String[] record = records.get(index);
-
         deleteExisting(record);
     }
 
     private void viewRatingDetails() {
-
         int index = selectedIndex();
 
-        if (index < 0) return;
+        if (index < 0) {
+            return;
+        }
 
         String[] record = records.get(index);
+        StringBuilder details = new StringBuilder();
 
-        StringBuilder details =
-                new StringBuilder();
-
-        for (int i = 0;
-                i < ratingColumns.length; i++) {
-
+        for (int i = 0; i < ratingColumns.length; i++) {
             details.append(ratingColumns[i])
                     .append(": ")
                     .append(record[i])
@@ -1370,17 +1118,14 @@ table.setAutoResizeMode(
                 JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private void saveRecords() {
-
+    private boolean saveRecords() {
         try {
             Files.createDirectories(dataDir);
 
-            List<String> lines =
-                    new ArrayList<>();
+            List<String> lines = new ArrayList<>();
 
             for (String[] record : records) {
-                lines.add(
-                        String.join(" | ", record));
+                lines.add(String.join(" | ", record));
             }
 
             Files.write(
@@ -1393,17 +1138,17 @@ table.setAutoResizeMode(
             loadRecords();
 
             JOptionPane.showMessageDialog(
-                    this,
-                    "Record saved successfully.");
+                    this, "Record saved successfully.");
+            return true;
 
         } catch (IOException ex) {
-            showError("Cannot save records: "
-                    + ex.getMessage());
+            showError(
+                    "Cannot save records: " + ex.getMessage());
+            return false;
         }
     }
 
     private void showError(String message) {
-
         JOptionPane.showMessageDialog(
                 this,
                 message,
