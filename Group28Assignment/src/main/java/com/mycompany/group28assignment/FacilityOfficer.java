@@ -1,4 +1,4 @@
-package oodjgroupassignment;
+package com.mycompany.group28assignment;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -10,7 +10,27 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EquipmentInventoryManagement extends JFrame {
+public class Facility_Officer extends User{
+    private MainFrame mainFrame;
+    
+    public Facility_Officer(String userID) {
+        try {
+            List<String> lines = Files.readAllLines(Path.of("users.txt"));
+            for (String line : lines) {
+                String[] parts = line.split("\\|");
+                if (!userID.isEmpty() && userID.equals(parts[0])) {
+                    this.userName = parts[1];
+                    this.userEmail = parts[2];
+                    this.userRole = parts[5];
+                    this.userPhoneNum = parts[4];
+                    this.createdBy = parts[6];
+                    break;
+                }
+            }
+        } catch (Exception ex) {
+
+        }
+    }
 
     private final Path dataFile =
             Paths.get("equipment.txt").toAbsolutePath();
@@ -77,24 +97,35 @@ public class EquipmentInventoryManagement extends JFrame {
 
     // ==================== CONSTRUCTOR ====================
 
-    public EquipmentInventoryManagement() {
+    public JPanel createFacilityOfficerPanel(MainFrame mainFrame) {
 
-        setTitle("Equipment Inventory Management");
-        setSize(1200, 720);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
+        this.mainFrame = mainFrame;
 
         loadFromFile();
+
         initializeGUI();
+
         saveToFile();
+
         displayAllRecords();
+
+        return mainPanel;
     }
 
     // ==================== GUI ====================
 
+    private JPanel mainPanel;
+    
     private void initializeGUI() {
 
-        setLayout(new BorderLayout(10, 10));
+        mainPanel = new JPanel();
+        mainPanel.setLayout(new BorderLayout(5, 5));
+
+        JButton btnBack = new JButton("Back");
+
+        btnBack.addActionListener(e -> {
+            mainFrame.showPanel("Facility Officer");
+        });
 
         JLabel title = new JLabel(
                 "Equipment Inventory Management",
@@ -103,12 +134,16 @@ public class EquipmentInventoryManagement extends JFrame {
 
         title.setFont(new Font("Arial", Font.BOLD, 24));
         title.setBorder(BorderFactory.createEmptyBorder(
-                15, 10, 15, 10
+                5, 10, 15, 10
         ));
 
-        add(title, BorderLayout.NORTH);
+        JPanel topPanel = new JPanel(new BorderLayout());
 
-        // FORM PANEL
+        topPanel.add(btnBack, BorderLayout.WEST);
+        topPanel.add(title, BorderLayout.CENTER);
+
+        mainPanel.add(topPanel, BorderLayout.NORTH);
+
         formPanel = new JPanel(new GridBagLayout());
 
         formPanel.setBorder(BorderFactory.createTitledBorder(
@@ -151,7 +186,9 @@ public class EquipmentInventoryManagement extends JFrame {
         txtUpdatedDate = new JTextField(15);
         txtUpdatedDate.setEditable(false);
 
-        txtAddedBy = new JTextField(15);
+        txtAddedBy = new JTextField();
+        txtAddedBy.setText(userName);
+        txtAddedBy.setEditable(false);
 
         addFormField(formPanel, gbc, 0, "Equipment ID:", txtId);
         addFormField(formPanel, gbc, 1, "Equipment Name:", txtName);
@@ -182,7 +219,6 @@ public class EquipmentInventoryManagement extends JFrame {
         addFormField(formPanel, gbc, 7, "Updated Date:", txtUpdatedDate);
         addFormField(formPanel, gbc, 8, "Added By:", txtAddedBy);
 
-        // TABLE
         String[] columns = {
             "Equipment ID",
             "Equipment Name",
@@ -268,8 +304,8 @@ public class EquipmentInventoryManagement extends JFrame {
 
         contentPanel.add(rightPanel, BorderLayout.CENTER);
 
-        add(contentPanel, BorderLayout.CENTER);
-        add(lblMessage, BorderLayout.SOUTH);
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
+        mainPanel.add(lblMessage, BorderLayout.SOUTH);
 
         // BUTTON ACTIONS
         btnAdd.addActionListener(e -> showAddDialog(false));
@@ -335,7 +371,7 @@ public class EquipmentInventoryManagement extends JFrame {
             cmbStatus.setSelectedItem(selectedEquipment.status);
             cmbLocation.setSelectedItem(selectedEquipment.location);
             txtUpdatedDate.setText(selectedEquipment.updatedDate);
-            txtAddedBy.setText(selectedEquipment.addedBy);
+            txtAddedBy.setText(userName);
 
         } else {
             selectedEquipment = null;
@@ -346,11 +382,11 @@ public class EquipmentInventoryManagement extends JFrame {
             cmbStatus.setSelectedItem("Available");
             cmbLocation.setSelectedIndex(0);
             txtUpdatedDate.setText(LocalDate.now().toString());
-            txtAddedBy.setText("");
+            txtAddedBy.setText(userName);
         }
 
         addDialog = new JDialog(
-                this,
+                mainFrame,
                 isUpdate ? "Update Equipment" : "Add Equipment",
                 true
         );
@@ -395,7 +431,7 @@ public class EquipmentInventoryManagement extends JFrame {
 
         addDialog.pack();
         addDialog.setMinimumSize(new Dimension(450, 480));
-        addDialog.setLocationRelativeTo(this);
+        addDialog.setLocationRelativeTo(mainFrame);
         addDialog.setVisible(true);
     }
 
@@ -514,7 +550,7 @@ public class EquipmentInventoryManagement extends JFrame {
         } catch (IOException ex) {
 
             JOptionPane.showMessageDialog(
-                    this,
+                    mainFrame,
                     "Unable to save the next equipment ID."
             );
         }
@@ -529,7 +565,7 @@ public class EquipmentInventoryManagement extends JFrame {
         if (txtName.getText().trim().isEmpty()) {
 
             JOptionPane.showMessageDialog(
-                    this,
+                    mainFrame,
                     "Please enter the equipment name."
             );
 
@@ -540,7 +576,7 @@ public class EquipmentInventoryManagement extends JFrame {
         if (txtAddedBy.getText().trim().isEmpty()) {
 
             JOptionPane.showMessageDialog(
-                    this,
+                    mainFrame,
                     "Please enter the name of the person responsible."
             );
 
@@ -580,7 +616,7 @@ public class EquipmentInventoryManagement extends JFrame {
                     cmbStatus.getSelectedItem().toString(),
                     cmbLocation.getSelectedItem().toString(),
                     LocalDate.now().toString(),
-                    txtAddedBy.getText().trim()
+                    userName
             );
 
             equipmentList.add(item);
@@ -606,7 +642,7 @@ public class EquipmentInventoryManagement extends JFrame {
             String lastId = newlyAddedItems.get(newlyAddedItems.size() - 1).id;
 
             JOptionPane.showMessageDialog(
-                    this,
+                    mainFrame,
                     numberOfItems + " equipment record(s) added successfully!\n"
             );
 
@@ -695,7 +731,7 @@ public class EquipmentInventoryManagement extends JFrame {
     private void showFilterDialog() {
 
         JDialog filterDialog = new JDialog(
-                this,
+                mainFrame,
                 "Filter Equipment",
                 true
         );
@@ -776,7 +812,7 @@ public class EquipmentInventoryManagement extends JFrame {
 
         filterDialog.pack();
         filterDialog.setMinimumSize(new Dimension(350, 220));
-        filterDialog.setLocationRelativeTo(this);
+        filterDialog.setLocationRelativeTo(mainFrame);
         filterDialog.setVisible(true);
     }
 
@@ -785,7 +821,7 @@ public class EquipmentInventoryManagement extends JFrame {
     private void updateEquipment() {
 
         if (selectedEquipment == null) {
-            JOptionPane.showMessageDialog(this, "Please select an equipment record.");
+            JOptionPane.showMessageDialog(mainFrame, "Please select an equipment record.");
             return;
         }
 
@@ -802,7 +838,7 @@ public class EquipmentInventoryManagement extends JFrame {
         selectedEquipment.status = cmbStatus.getSelectedItem().toString();
         selectedEquipment.location = cmbLocation.getSelectedItem().toString();
         selectedEquipment.updatedDate = LocalDate.now().toString();
-        selectedEquipment.addedBy = txtAddedBy.getText().trim();
+        selectedEquipment.addedBy = userName;
 
         if (saveToFile()) {
             applyFilters();
@@ -812,7 +848,7 @@ public class EquipmentInventoryManagement extends JFrame {
             }
             selectedEquipment = null;
             lblMessage.setText("Equipment updated successfully.");
-            JOptionPane.showMessageDialog(this, "Equipment updated successfully!");
+            JOptionPane.showMessageDialog(mainFrame, "Equipment updated successfully!");
         } else {
             selectedEquipment.name = backup.name;
             selectedEquipment.category = backup.category;
@@ -830,7 +866,7 @@ public class EquipmentInventoryManagement extends JFrame {
     private void deleteEquipment() {
 
         if (selectedEquipment == null) {
-            JOptionPane.showMessageDialog(this, "Please select an equipment record to delete.");
+            JOptionPane.showMessageDialog(mainFrame, "Please select an equipment record to delete.");
             return;
         }
 
@@ -858,7 +894,7 @@ public class EquipmentInventoryManagement extends JFrame {
             }
             selectedEquipment = null;
             lblMessage.setText("Equipment deleted successfully.");
-            JOptionPane.showMessageDialog(this, "Equipment deleted successfully!");
+            JOptionPane.showMessageDialog(mainFrame, "Equipment deleted successfully!");
         } else {
             if (oldIndex >= 0 && oldIndex <= equipmentList.size()) {
                 equipmentList.add(oldIndex, itemToDelete);
@@ -914,7 +950,7 @@ public class EquipmentInventoryManagement extends JFrame {
         cmbStatus.setSelectedItem("Available");
         cmbLocation.setSelectedIndex(0);
         txtUpdatedDate.setText(LocalDate.now().toString());
-        txtAddedBy.setText("");
+        txtAddedBy.setText(userName);
     }
 
     // ==================== LOAD FROM TXT FILE ====================
@@ -968,7 +1004,7 @@ public class EquipmentInventoryManagement extends JFrame {
         } catch (IOException ex) {
 
             JOptionPane.showMessageDialog(
-                    this,
+                    mainFrame,
                     "Error loading equipment file:\n"
                             + ex.getMessage()
             );
@@ -1017,25 +1053,12 @@ public class EquipmentInventoryManagement extends JFrame {
         } catch (IOException ex) {
 
             JOptionPane.showMessageDialog(
-                    this,
+                    mainFrame,
                     "Error saving equipment file:\n"
                             + ex.getMessage()
             );
 
             return false;
         }
-    }
-
-    // ==================== MAIN METHOD ====================
-
-    public static void main(String[] args) {
-
-        SwingUtilities.invokeLater(() -> {
-
-            EquipmentInventoryManagement app =
-                    new EquipmentInventoryManagement();
-
-            app.setVisible(true);
-        });
     }
 }
