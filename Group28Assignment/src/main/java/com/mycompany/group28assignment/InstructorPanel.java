@@ -15,12 +15,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
 
+
 public class InstructorPanel extends JPanel {
 
     private final Path dataDir = Paths.get("data");
     private final Path schedules = dataDir.resolve("schedules.txt");
     private final Path problems = dataDir.resolve("facility_problems.txt");
     private final Path ratings = dataDir.resolve("ratings.txt");
+    private final Path equipmentFile = dataDir.resolve("equipment.txt");
 
     private static final DateTimeFormatter DISPLAY_DATE =
             DateTimeFormatter.ofPattern("dd-MM-uuuu");
@@ -45,11 +47,9 @@ public class InstructorPanel extends JPanel {
         "Class", "Rating", "Comment"
     };
 
-    private final Runnable logoutAction;
-    private final CardLayout cards = new CardLayout();
-    private final JPanel pages = new JPanel(cards);
-
-    private int section = 0;
+    private final Instructor instructor;
+    private final MainFrame mainFrame;
+    private final int section;
 
     private final JTextField searchField = new JTextField(18);
     private final JLabel countLabel = new JLabel("Showing: 0 / 0");
@@ -91,103 +91,51 @@ public class InstructorPanel extends JPanel {
         }
     }
 
-    public InstructorPanel() {
-        this(null);
-    }
+    public InstructorPanel(
+            Instructor instructor,
+            MainFrame mainFrame,
+            int section) {
 
-    public InstructorPanel(Runnable logoutAction) {
-        this.logoutAction = logoutAction;
+        this.instructor = instructor;
+        this.mainFrame = mainFrame;
+        this.section = section;
 
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        pages.add(createMenu(), "MENU");
-        pages.add(createWorkspace(), "WORKSPACE");
+        add(createWorkspace(), BorderLayout.CENTER);
 
-        add(pages, BorderLayout.CENTER);
-        cards.show(pages, "MENU");
+        loadRecords();
     }
 
-    private JPanel createMenu() {
-        JPanel menu = new JPanel(new BorderLayout(15, 25));
-
-        JLabel title = new JLabel(
-                "Instructor Dashboard", SwingConstants.CENTER);
-        title.setFont(new Font("SansSerif", Font.BOLD, 26));
-        menu.add(title, BorderLayout.NORTH);
-
-        JPanel buttonPanel = new JPanel(
-                new GridLayout(4, 1, 0, 15));
-        buttonPanel.setBorder(
-                BorderFactory.createEmptyBorder(25, 65, 25, 65));
-
-        JButton schedulesButton = new JButton("Class Schedules");
-        JButton problemsButton = new JButton("Facility Problems");
-        JButton ratingsButton = new JButton("Instructor Ratings");
-        JButton logoutButton = new JButton("Log Out");
-
-        JButton[] buttons = {
-            schedulesButton, problemsButton,
-            ratingsButton, logoutButton
-        };
-
-        for (JButton button : buttons) {
-            styleButton(button);
-            button.setFont(new Font("SansSerif", Font.BOLD, 17));
-            buttonPanel.add(button);
-        }
-
-        schedulesButton.addActionListener(e -> openSection(0));
-        problemsButton.addActionListener(e -> openSection(1));
-        ratingsButton.addActionListener(e -> openSection(2));
-
-        logoutButton.addActionListener(e -> {
-            if (logoutAction != null) {
-                logoutAction.run();
-            } else {
-                JOptionPane.showMessageDialog(
-                        this, "Log Out is available from MainFrame.");
-            }
-        });
-
-        menu.add(buttonPanel, BorderLayout.CENTER);
-        return menu;
-    }
 
     private JPanel createWorkspace() {
         JPanel workspace = new JPanel(new BorderLayout(10, 10));
 
-        JLabel heading = new JLabel(
-                "Instructor Dashboard", SwingConstants.CENTER);
-        heading.setFont(new Font("SansSerif", Font.BOLD, 22));
-        workspace.add(heading, BorderLayout.NORTH);
+        JPanel topPanel = new JPanel(new BorderLayout());
 
-        JPanel main = new JPanel(new BorderLayout(10, 10));
-        JPanel top = new JPanel(
-                new FlowLayout(FlowLayout.LEFT, 10, 8));
+        backButton.setText("Back");
 
-        styleButton(backButton);
-        backButton.addActionListener(e -> cards.show(pages, "MENU"));
+        backButton.addActionListener(e ->
+                mainFrame.showPanel("Instructor")
+        );
 
-        sectionTitle.setFont(
-                new Font("SansSerif", Font.BOLD, 17));
+        sectionTitle.setFont(new Font("Arial", Font.BOLD, 24));
+        sectionTitle.setHorizontalAlignment(SwingConstants.CENTER);
 
-        top.add(backButton);
-        top.add(Box.createHorizontalStrut(10));
-        top.add(sectionTitle);
-        top.add(Box.createHorizontalStrut(15));
-        top.add(new JLabel("Search ID / Name:"));
-        top.add(searchField);
+        topPanel.add(backButton, BorderLayout.WEST);
+        topPanel.add(sectionTitle, BorderLayout.CENTER);
+        topPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 15, 5));
 
-        main.add(top, BorderLayout.NORTH);
+        workspace.add(topPanel, BorderLayout.NORTH);
 
-        table.setRowHeight(30);
-        table.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        // Table settings.
+        table.setRowHeight(24);
+        table.setFont(new Font("Arial", Font.PLAIN, 13));
         table.getTableHeader().setFont(
-                new Font("SansSerif", Font.BOLD, 13));
+                new Font("Arial", Font.BOLD, 13));
 
-        table.setSelectionMode(
-                ListSelectionModel.SINGLE_SELECTION);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setRowSorter(sorter);
         table.setFillsViewportHeight(true);
 
@@ -224,26 +172,37 @@ public class InstructorPanel extends JPanel {
             }
         });
 
-        main.add(new JScrollPane(table), BorderLayout.CENTER);
+        JScrollPane tableScrollPane = new JScrollPane(table);
+        tableScrollPane.setBorder(
+                BorderFactory.createTitledBorder("Records"));
 
-        JPanel bottom = new JPanel(new BorderLayout());
-        JPanel actions = new JPanel(
+        JPanel buttonPanel = new JPanel(
                 new FlowLayout(FlowLayout.LEFT));
 
-        JButton[] actionButtons = {
-            addButton, editButton, cancelButton, deleteButton
-        };
+        searchField.setColumns(20);
 
-        for (JButton button : actionButtons) {
-            styleButton(button);
-            actions.add(button);
-        }
+        buttonPanel.add(new JLabel("Search by ID or Name:"));
+        buttonPanel.add(searchField);
+        buttonPanel.add(addButton);
+        buttonPanel.add(editButton);
+        buttonPanel.add(cancelButton);
+        buttonPanel.add(deleteButton);
 
-        bottom.add(actions, BorderLayout.WEST);
-        bottom.add(countLabel, BorderLayout.EAST);
+        JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
+        contentPanel.setBorder(
+                BorderFactory.createEmptyBorder(0, 10, 0, 10));
 
-        main.add(bottom, BorderLayout.SOUTH);
-        workspace.add(main, BorderLayout.CENTER);
+        contentPanel.add(buttonPanel, BorderLayout.NORTH);
+        contentPanel.add(tableScrollPane, BorderLayout.CENTER);
+
+        workspace.add(contentPanel, BorderLayout.CENTER);
+
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        countLabel.setBorder(
+                BorderFactory.createEmptyBorder(5, 10, 10, 10));
+        bottomPanel.add(countLabel, BorderLayout.EAST);
+
+        workspace.add(bottomPanel, BorderLayout.SOUTH);
 
         addButton.addActionListener(e -> addRecord());
         editButton.addActionListener(e -> editRecord());
@@ -309,12 +268,6 @@ public class InstructorPanel extends JPanel {
                 button.setBackground(BLUE);
             }
         });
-    }
-
-    private void openSection(int selectedSection) {
-        section = selectedSection;
-        loadRecords();
-        cards.show(pages, "WORKSPACE");
     }
 
     private Path currentFile() {
