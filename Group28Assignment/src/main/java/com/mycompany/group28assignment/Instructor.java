@@ -35,14 +35,14 @@ public class Instructor extends User {
     }
 
     public JPanel createSchedulePanel(MainFrame mainFrame) {
-        return new InstructorPanel(this, mainFrame, 0);
+        return new InstructorPanel(mainFrame, 0, this.userName);
     }
 
     public JPanel createFacilityProblemPanel(MainFrame mainFrame) {
-        return new InstructorPanel(this, mainFrame, 1);
+        return new InstructorPanel(mainFrame, 1, this.userName);
     }
 
     public JPanel createRatingPanel(MainFrame mainFrame) {
-        return new InstructorPanel(this, mainFrame, 2);
+        return new InstructorPanel(mainFrame, 2, this.userName);
     }
 }
