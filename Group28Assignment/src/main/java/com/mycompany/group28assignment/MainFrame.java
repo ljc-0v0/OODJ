@@ -99,7 +99,7 @@ public class MainFrame extends JFrame {
     }
 
     private JPanel attendance_officerPanel(AttendanceOfficer o){
-        JPanel panel = new JPanel(new GridLayout(4,4,8,8));
+        JPanel panel = new JPanel(new GridLayout(3,3,8,8));
         JButton viewBtn = new JButton("View Attendance Records");
         JButton reportBtn = new JButton("Generate Attendance Report");
         JButton logoutBtn = new JButton("Log Out");
