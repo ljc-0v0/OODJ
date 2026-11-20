@@ -10,33 +10,39 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Facility_Officer extends User{
+public class InventoryEquipmentManagement extends User{
     private MainFrame mainFrame;
     
-    public Facility_Officer(String userID) {
-        try {
-            List<String> lines = Files.readAllLines(Path.of("users.txt"));
-            for (String line : lines) {
-                String[] parts = line.split("\\|");
-                if (!userID.isEmpty() && userID.equals(parts[0])) {
-                    this.userName = parts[1];
-                    this.userEmail = parts[2];
-                    this.userRole = parts[5];
-                    this.userPhoneNum = parts[4];
-                    this.createdBy = parts[6];
-                    break;
-                }
+    public InventoryEquipmentManagement(String userID) {
+    super(userID);
+
+    try {
+        List<String> lines = Files.readAllLines(Path.of("users.txt"));
+
+        for (String line : lines) {
+            String[] parts = line.split("\\|", -1);
+
+            if (parts.length >= 7 && userID.equals(parts[0])) {
+                this.userName = parts[1];
+                this.userEmail = parts[2];
+                this.userRole = parts[5];
+                this.userPhoneNum = parts[4];
+                this.createdBy = parts[6];
+                break;
             }
-        } catch (Exception ex) {
-
         }
-    }
 
+    } catch (Exception ex) {
+        ex.printStackTrace();
+    }
+}
+
+    private final Path dataDir = Paths.get("data");
     private final Path dataFile =
-            Paths.get("equipment.txt").toAbsolutePath();
+            dataDir.resolve("equipment.txt").toAbsolutePath();
 
     private final Path nextIdFile =
-            Paths.get("equipment_next_id.txt").toAbsolutePath();
+            dataDir.resolve("equipment_next_id.txt").toAbsolutePath();
 
     private final List<Equipment> equipmentList = new ArrayList<>();
 
@@ -52,7 +58,6 @@ public class Facility_Officer extends User{
     private JTextField txtAddedBy;
     private JTextField txtSearch;
 
-    // Current filter selections
     private String selectedCategoryFilter = "All";
     private String selectedStatusFilter = "All";
     private String selectedLocationFilter = "All";
