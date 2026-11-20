@@ -1,4 +1,3 @@
-
 package com.mycompany.group28assignment;
 
 import javax.swing.*;
@@ -15,14 +14,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
 
-
 public class InstructorPanel extends JPanel {
 
     private final Path dataDir = Paths.get("data");
+    private final Path equipmentFile = dataDir.resolve("equipment.txt");
     private final Path schedules = dataDir.resolve("schedules.txt");
     private final Path problems = dataDir.resolve("facility_problems.txt");
     private final Path ratings = dataDir.resolve("ratings.txt");
-    private final Path equipmentFile = dataDir.resolve("equipment.txt");
+    private final Path idCounters = dataDir.resolve("instructor_id_counters.properties");
 
     private static final DateTimeFormatter DISPLAY_DATE =
             DateTimeFormatter.ofPattern("dd-MM-uuuu");
@@ -34,12 +33,14 @@ public class InstructorPanel extends JPanel {
 
     private final String[] scheduleColumns = {
         "Class ID", "Class Name", "Discipline",
-        "Date", "Time", "Capacity", "Status"
+        "Date", "Time", "Capacity", "Status",
+        "Fee", "Duration", "Created By"
     };
 
     private final String[] problemColumns = {
         "Problem ID", "Equipment ID", "Equipment Name",
-        "Location", "Description", "Date", "Status"
+        "Location", "Description", "Date", "Status",
+        "Created By"
     };
 
     private final String[] ratingColumns = {
@@ -47,7 +48,7 @@ public class InstructorPanel extends JPanel {
         "Class", "Rating", "Comment"
     };
 
-    private final Instructor instructor;
+    private final String creatorName;
     private final MainFrame mainFrame;
     private final int section;
 
@@ -57,9 +58,8 @@ public class InstructorPanel extends JPanel {
 
     private final JButton addButton = new JButton();
     private final JButton editButton = new JButton("Update");
-    private final JButton cancelButton = new JButton("Cancel Class");
     private final JButton deleteButton = new JButton();
-    private final JButton backButton = new JButton("Back to Menu");
+    private final JButton backButton = new JButton("Back");
 
     private final DefaultTableModel model = new DefaultTableModel() {
         @Override
@@ -92,13 +92,13 @@ public class InstructorPanel extends JPanel {
     }
 
     public InstructorPanel(
-            Instructor instructor,
             MainFrame mainFrame,
-            int section) {
+            int section,
+            String creatorName) {
 
-        this.instructor = instructor;
         this.mainFrame = mainFrame;
         this.section = section;
+        this.creatorName = creatorName == null ? "" : creatorName.trim();
 
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
@@ -107,7 +107,6 @@ public class InstructorPanel extends JPanel {
 
         loadRecords();
     }
-
 
     private JPanel createWorkspace() {
         JPanel workspace = new JPanel(new BorderLayout(10, 10));
@@ -185,7 +184,6 @@ public class InstructorPanel extends JPanel {
         buttonPanel.add(searchField);
         buttonPanel.add(addButton);
         buttonPanel.add(editButton);
-        buttonPanel.add(cancelButton);
         buttonPanel.add(deleteButton);
 
         JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
@@ -206,7 +204,6 @@ public class InstructorPanel extends JPanel {
 
         addButton.addActionListener(e -> addRecord());
         editButton.addActionListener(e -> editRecord());
-        cancelButton.addActionListener(e -> cancelClass());
         deleteButton.addActionListener(e -> deleteRecord());
 
         searchField.getDocument().addDocumentListener(
@@ -250,8 +247,7 @@ public class InstructorPanel extends JPanel {
         button.setBackground(BLUE);
         button.setForeground(Color.WHITE);
         button.setFocusPainted(false);
-        button.setBorder(
-                BorderFactory.createEmptyBorder(12, 16, 12, 16));
+        button.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         button.setCursor(Cursor.getPredefinedCursor(
                 Cursor.HAND_CURSOR));
 
@@ -307,7 +303,6 @@ public class InstructorPanel extends JPanel {
         addButton.setVisible(editable);
         editButton.setVisible(editable);
         deleteButton.setVisible(editable);
-        cancelButton.setVisible(section == 0);
     }
 
     private List<Equipment> loadEquipment() throws IOException {
@@ -393,34 +388,40 @@ public class InstructorPanel extends JPanel {
     private String[] normalize(String[] p, int number) {
         if (section == 0) {
             if (p.length >= 7) {
-                return Arrays.copyOf(p, 7);
+                String[] row = Arrays.copyOf(p, 10);
+                if (row[7] == null || row[7].isBlank()) row[7] = "0";
+                if (row[8] == null || row[8].isBlank()) row[8] = "60";
+                if (row[9] == null) row[9] = "";
+                return row;
             }
 
             if (p.length == 3) {
                 return new String[]{
                     String.format("C%03d", number),
                     p[0], "General", p[1], p[2],
-                    "20", "Available"
+                    "20", "Available", "0", "60", ""
                 };
             }
         }
 
         if (section == 1) {
             if (p.length >= 7) {
-                return Arrays.copyOf(p, 7);
+                String[] row = Arrays.copyOf(p, 8);
+                if (row[7] == null) row[7] = "";
+                return row;
             }
 
             if (p.length == 5) {
                 return new String[]{
                     p[0], "", p[1], "",
-                    p[2], p[3], p[4]
+                    p[2], p[3], p[4], ""
                 };
             }
 
             if (p.length == 3) {
                 return new String[]{
                     String.format("P%03d", number),
-                    "", p[0], "", p[1], p[2], "Open"
+                    "", p[0], "", p[1], p[2], "Open", ""
                 };
             }
         }
@@ -486,23 +487,90 @@ public class InstructorPanel extends JPanel {
                 + " / " + records.size());
     }
 
-    private String nextID() {
-        String prefix = section == 0 ? "C" : "P";
+    private int highestExistingID(String prefix) {
         int max = 0;
+        Path file = "C".equals(prefix) ? schedules : problems;
+        try {
+            if (Files.exists(file)) {
+                for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
+                    String id = line.split("\\|", -1)[0].trim();
+                    if (id.matches(prefix + "\\d+")) {
+                        max = Math.max(max, Integer.parseInt(id.substring(1)));
+                    }
+                }
+            }
+        } catch (IOException ex) {
+            showError("Cannot read existing IDs: " + ex.getMessage());
+        }
+        return max;
+    }
 
-        for (String[] record : records) {
-            String id = record[0];
-
-            if (id.matches(prefix + "\\d+")) {
+    private int savedCounter(String prefix) throws IOException {
+        Properties properties = new Properties();
+        if (Files.exists(idCounters)) {
+            try (java.io.InputStream in = Files.newInputStream(idCounters)) {
+                properties.load(in);
+            }
+        }
+        // Respect counters from earlier project versions as well.
+        Path legacyCounters = Paths.get("id_counters.properties");
+        if (Files.exists(legacyCounters)) {
+            Properties legacy = new Properties();
+            try (java.io.InputStream in = Files.newInputStream(legacyCounters)) {
+                legacy.load(in);
+            }
+            String oldValue = legacy.getProperty(prefix);
+            if (oldValue != null) {
                 try {
-                    int number = Integer.parseInt(id.substring(1));
-                    max = Math.max(max, number);
-                } catch (NumberFormatException ignored) {
+                    int oldMax = Integer.parseInt(oldValue.trim());
+                    int newMax = Integer.parseInt(properties.getProperty(prefix, "0"));
+                    return Math.max(oldMax, newMax);
+                } catch (NumberFormatException ex) {
+                    throw new IOException("Invalid legacy ID counter", ex);
                 }
             }
         }
+        try {
+            return Integer.parseInt(properties.getProperty(prefix, "0"));
+        } catch (NumberFormatException ex) {
+            throw new IOException("Invalid saved ID counter for " + prefix, ex);
+        }
+    }
 
-        return String.format("%s%03d", prefix, max + 1);
+    private String nextID() {
+        String prefix = section == 0 ? "C" : "P";
+        try {
+            int highest = Math.max(highestExistingID(prefix), savedCounter(prefix));
+            return String.format("%s%03d", prefix, highest + 1);
+        } catch (IOException ex) {
+            showError("Cannot generate ID: " + ex.getMessage());
+            return null;
+        }
+    }
+
+    private void rememberID(String id) throws IOException {
+        if (id == null || !id.matches("[CP]\\d+")) {
+            throw new IOException("Invalid record ID");
+        }
+        Files.createDirectories(dataDir);
+        Properties properties = new Properties();
+        if (Files.exists(idCounters)) {
+            try (java.io.InputStream in = Files.newInputStream(idCounters)) {
+                properties.load(in);
+            }
+        }
+        String prefix = id.substring(0, 1);
+        int previous;
+        try {
+            previous = Integer.parseInt(properties.getProperty(prefix, "0"));
+        } catch (NumberFormatException ex) {
+            throw new IOException("Invalid ID counter", ex);
+        }
+        int next = Integer.parseInt(id.substring(1));
+        properties.setProperty(prefix, String.valueOf(Math.max(previous, next)));
+        try (java.io.OutputStream out = Files.newOutputStream(idCounters)) {
+            properties.store(out, "Highest allocated Instructor record IDs - do not reset");
+        }
     }
 
     private JSpinner createDateSpinner(String value) {
@@ -553,7 +621,12 @@ public class InstructorPanel extends JPanel {
     }
 
     private String[] showScheduleForm(String[] existing) {
+        if (creatorName.isBlank()) {
+            showError("Current login username is unavailable. Please reconnect login to MainFrame.");
+            return null;
+        }
         String[] labels = scheduleColumns;
+        if (existing == null && nextID() == null) return null;
 
         JPanel form = new JPanel(
                 new GridLayout(labels.length, 2, 8, 8));
@@ -575,6 +648,11 @@ public class InstructorPanel extends JPanel {
             } else if (i == 4) {
                 inputs[i] = createTimeSpinner(value);
 
+            } else if (i == 9) {
+                JTextField creator = new JTextField(existing == null ? creatorName : value, 20);
+                creator.setEditable(false);
+                inputs[i] = creator;
+
             } else if (i == 6) {
                 JComboBox<String> status = new JComboBox<>(
                         new String[]{"Available", "Cancelled"});
@@ -585,6 +663,10 @@ public class InstructorPanel extends JPanel {
             } else {
                 if (existing == null && i == 5) {
                     value = "20";
+                } else if (existing == null && i == 7) {
+                    value = "0";
+                } else if (existing == null && i == 8) {
+                    value = "60";
                 }
                 inputs[i] = new JTextField(value, 20);
             }
@@ -646,11 +728,18 @@ public class InstructorPanel extends JPanel {
                                 .getText().trim();
                     }
 
-                    validateField(values[i]);
+                    if (i != 9) {
+                        validateField(values[i]);
+                    }
                 }
 
-                LocalDate.parse(values[3]);
+                LocalDate classDate = LocalDate.parse(values[3]);
                 LocalTime.parse(values[4]);
+                if (classDate.isBefore(LocalDate.now())
+                        && (existing == null || !values[3].equals(existing[3]))) {
+                    throw new IllegalArgumentException(
+                            "Class date cannot be before today.");
+                }
 
                 int capacity = Integer.parseInt(values[5]);
 
@@ -659,6 +748,11 @@ public class InstructorPanel extends JPanel {
                             "Capacity must be positive.");
                 }
 
+                double fee = Double.parseDouble(values[7]);
+                int duration = Integer.parseInt(values[8]);
+                if (fee < 0 || duration <= 0) {
+                    throw new IllegalArgumentException("Fee must be non-negative and duration must be positive.");
+                }
                 return values;
 
             } catch (Exception ex) {
@@ -670,6 +764,10 @@ public class InstructorPanel extends JPanel {
     }
 
     private String[] showProblemForm(String[] existing) {
+        if (creatorName.isBlank()) {
+            showError("Current login username is unavailable. Please reconnect login to MainFrame.");
+            return null;
+        }
         List<Equipment> equipment;
 
         try {
@@ -679,6 +777,7 @@ public class InstructorPanel extends JPanel {
             return null;
         }
 
+        if (existing == null && nextID() == null) return null;
         JPanel form = new JPanel(new GridLayout(6, 2, 8, 8));
 
         JTextField idField = new JTextField(
@@ -695,7 +794,8 @@ public class InstructorPanel extends JPanel {
                 existing == null ? "" : existing[4], 20);
 
         JSpinner dateSpinner = createDateSpinner(
-                existing == null ? "" : existing[5]);
+                existing == null ? LocalDate.now().toString() : existing[5]);
+        dateSpinner.setEnabled(false);
 
         JComboBox<String> statusBox = new JComboBox<>(
                 new String[]{"Open", "In Progress", "Resolved"});
@@ -800,13 +900,8 @@ public class InstructorPanel extends JPanel {
                         descriptionField.getText().trim();
                 validateField(description);
 
-                dateSpinner.commitEdit();
-
-                Date date = (Date) dateSpinner.getValue();
-
-                String dateValue = date.toInstant()
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalDate().toString();
+                String dateValue = existing == null
+                        ? LocalDate.now().toString() : existing[5];
 
                 String status = String.valueOf(
                         statusBox.getSelectedItem());
@@ -818,7 +913,8 @@ public class InstructorPanel extends JPanel {
                     selected.location,
                     description,
                     dateValue,
-                    status
+                    status,
+                    existing == null ? creatorName : existing[7]
                 };
 
             } catch (Exception ex) {
@@ -850,7 +946,16 @@ public class InstructorPanel extends JPanel {
 
         if (result != null) {
             records.add(result);
-            saveRecords();
+            if (saveRecords()) {
+                try {
+                    rememberID(result[0]);
+                } catch (IOException ex) {
+                    showError("Record saved, but ID counter could not be updated: "
+                            + ex.getMessage());
+                }
+            } else {
+                records.remove(result);
+            }
         }
     }
 
@@ -877,6 +982,7 @@ public class InstructorPanel extends JPanel {
         }
 
         String[] original = records.get(index);
+        if (!canEdit(original)) return;
 
         String[] updated = section == 0
                 ? showScheduleForm(original)
@@ -888,37 +994,20 @@ public class InstructorPanel extends JPanel {
         }
     }
 
-    private void cancelClass() {
-        if (section != 0) {
-            return;
+    private boolean canEdit(String[] record) {
+        int ownerIndex = section == 0 ? 9 : 7;
+        if (section == 2 || record.length <= ownerIndex) return false;
+        String owner = record[ownerIndex] == null ? "" : record[ownerIndex].trim();
+        if (creatorName.isBlank() || owner.isBlank()
+                || !owner.equalsIgnoreCase(creatorName)) {
+            showError("Only the creator of this record can modify it.");
+            return false;
         }
-
-        int index = selectedIndex();
-
-        if (index < 0) {
-            return;
-        }
-
-        String[] record = records.get(index);
-
-        if ("Cancelled".equalsIgnoreCase(record[6])) {
-            showError("This class is already cancelled.");
-            return;
-        }
-
-        int answer = JOptionPane.showConfirmDialog(
-                this,
-                "Cancel class " + record[0] + "?",
-                "Confirm Cancellation",
-                JOptionPane.YES_NO_OPTION);
-
-        if (answer == JOptionPane.YES_OPTION) {
-            record[6] = "Cancelled";
-            saveRecords();
-        }
+        return true;
     }
 
     private void deleteExisting(String[] existing) {
+        if (!canEdit(existing)) return;
         int answer = JOptionPane.showConfirmDialog(
                 this,
                 "Permanently delete " + existing[0] + "?",
@@ -970,7 +1059,7 @@ public class InstructorPanel extends JPanel {
                 JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private void saveRecords() {
+    private boolean saveRecords() {
         try {
             Files.createDirectories(dataDir);
 
@@ -991,10 +1080,12 @@ public class InstructorPanel extends JPanel {
 
             JOptionPane.showMessageDialog(
                     this, "Record saved successfully.");
+            return true;
 
         } catch (IOException ex) {
             showError(
                     "Cannot save records: " + ex.getMessage());
+            return false;
         }
     }
 
