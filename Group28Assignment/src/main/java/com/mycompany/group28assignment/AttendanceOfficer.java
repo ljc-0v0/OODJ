@@ -8,6 +8,7 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import com.toedter.calendar.JDateChooser;
+import javax.swing.table.TableRowSorter;
 
 public class AttendanceOfficer extends User{
     private MainFrame mainFrame;
@@ -31,6 +32,7 @@ public class AttendanceOfficer extends User{
         }
     }   
     
+
     public JPanel viewClassPanel(MainFrame mainFrame) {
         String[] columns = {"Class ID", "Class Name", "Discipline"};
 
@@ -48,41 +50,111 @@ public class AttendanceOfficer extends User{
                 if (line.trim().isEmpty()) {
                     continue;
                 }
+
                 String[] parts = line.split("\\|", -1);
 
                 if (parts.length >= 6) {
                     model.addRow(new Object[]{
-                        parts[0],
-                        parts[1],
-                        parts[2]
+                        parts[0].trim(),
+                        parts[1].trim(),
+                        parts[2].trim()
                     });
                 }
             }
+
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(null,
                     "Error reading class file: " + ex.getMessage());
         }
 
         JPanel panel = new JPanel(new BorderLayout(10, 10));
+
         JLabel title = new JLabel("Class", JLabel.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 22));
+
+        JTextField searchField = new JTextField(15);
+
+        String[] filterOptions = {
+            "All",
+            "Class ID",
+            "Class Name",
+            "Discipline"
+        };
+
+        JComboBox<String> filterBox = new JComboBox<>(filterOptions);
+
+        JButton clearBtn = new JButton("Clear");
+
+        JPanel searchPanel = new JPanel(new FlowLayout());
+
+        searchPanel.add(new JLabel("Filter By:"));
+        searchPanel.add(filterBox);
+        searchPanel.add(new JLabel("Search:"));
+        searchPanel.add(searchField);
+        searchPanel.add(clearBtn);
+
         JTable table = new JTable(model);
         table.setRowHeight(30);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getTableHeader().setReorderingAllowed(false);
+
+        TableRowSorter<DefaultTableModel> sorter =
+                new TableRowSorter<>(model);
+
+        table.setRowSorter(sorter);
+
         JScrollPane scrollPane = new JScrollPane(table);
+
         JButton backBtn = new JButton("Back");
+
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.add(backBtn, BorderLayout.CENTER);
 
+        searchField.addActionListener(e -> {
+            String keyword = searchField.getText().trim();
+            int selectedFilter = filterBox.getSelectedIndex();
+
+            if (keyword.isEmpty()) {
+                sorter.setRowFilter(null);
+            } else if (selectedFilter == 0) {
+                sorter.setRowFilter(
+                    RowFilter.regexFilter(
+                        "(?i)" + java.util.regex.Pattern.quote(keyword),
+                        0, 1, 2
+                    )
+                );
+            } else {
+                sorter.setRowFilter(
+                    RowFilter.regexFilter(
+                        "(?i)" + java.util.regex.Pattern.quote(keyword),
+                        selectedFilter - 1
+                    )
+                );
+            }
+        });
+
+        clearBtn.addActionListener(e -> {
+            searchField.setText("");
+            filterBox.setSelectedIndex(0);
+            sorter.setRowFilter(null);
+            table.clearSelection();
+        });
+
         table.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override          
+            @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (e.getClickCount() == 2 &&
                         SwingUtilities.isLeftMouseButton(e)) {
+
                     int selectedRow = table.rowAtPoint(e.getPoint());
+
                     if (selectedRow != -1) {
-                        String classID = table.getValueAt(selectedRow, 0).toString();
+                        int modelRow =
+                                table.convertRowIndexToModel(selectedRow);
+
+                        String classID = model.getValueAt(
+                                modelRow, 0).toString();
+
                         mainFrame.showAttendanceList(classID);
                     }
                 }
@@ -93,12 +165,18 @@ public class AttendanceOfficer extends User{
             mainFrame.showPanel("AttendanceOfficer");
         });
 
-        panel.add(title, BorderLayout.NORTH);
+        JPanel topPanel = new JPanel(new BorderLayout());
+
+        topPanel.add(title, BorderLayout.NORTH);
+        topPanel.add(searchPanel, BorderLayout.SOUTH);
+
+        panel.add(topPanel, BorderLayout.NORTH);
         panel.add(scrollPane, BorderLayout.CENTER);
         panel.add(bottomPanel, BorderLayout.SOUTH);
 
         return panel;
     }
+
     
     private void checkAttendanceFile() {
         Path path = Path.of("attendanceList.txt");
@@ -128,18 +206,20 @@ public class AttendanceOfficer extends User{
         try {
             List<String> lines = Files.readAllLines(
                     Path.of("attendanceList.txt"));
+
             for (String line : lines) {
                 if (line.trim().isEmpty()) {
                     continue;
                 }
+
                 String[] parts = line.split("\\|", -1);
 
-                if (parts.length >= 4 && parts[1].equals(classID)) {
+                if (parts.length >= 4 && parts[1].trim().equals(classID)) {
                     model.addRow(new Object[]{
-                        parts[0],
-                        parts[1],
-                        parts[2],
-                        parts[3],
+                        parts[0].trim(),
+                        parts[1].trim(),
+                        parts[2].trim(),
+                        parts[3].trim()
                     });
                 }
             }
@@ -149,32 +229,81 @@ public class AttendanceOfficer extends User{
         }
 
         JPanel panel = new JPanel(new BorderLayout(10, 10));
+
         JLabel title = new JLabel("Attendance List", JLabel.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 22));
+
+        com.toedter.calendar.JDateChooser dateChooser =
+                new com.toedter.calendar.JDateChooser();
+
+        dateChooser.setDateFormatString("yyyy-MM-dd");
+        dateChooser.setPreferredSize(new Dimension(130, 25));
+
+        JButton searchBtn = new JButton("Search");
+        JButton clearBtn = new JButton("Clear");
+        JButton addBtn = new JButton("Add");
+        JButton backBtn = new JButton("Back");
+
+        JPanel searchPanel = new JPanel(new FlowLayout());
+
+        searchPanel.add(new JLabel("Date:"));
+        searchPanel.add(dateChooser);
+        searchPanel.add(searchBtn);
+        searchPanel.add(clearBtn);
+        searchPanel.add(addBtn);
+
         JTable table = new JTable(model);
         table.setRowHeight(30);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getTableHeader().setReorderingAllowed(false);
+
+        TableRowSorter<DefaultTableModel> sorter =
+                new TableRowSorter<>(model);
+
+        table.setRowSorter(sorter);
+
         JScrollPane scrollPane = new JScrollPane(table);
-        JButton addBtn = new JButton("Add Attendance");
-        JButton backBtn = new JButton("Back");
 
         JPanel bottomPanel = new JPanel();
-        bottomPanel.add(addBtn);
         bottomPanel.add(backBtn);
-        
+
+        searchBtn.addActionListener(e -> {
+            if (dateChooser.getDate() == null) {
+                JOptionPane.showMessageDialog(null,
+                        "Please select a date.");
+                return;
+            }
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            String selectedDate = sdf.format(dateChooser.getDate());
+
+            sorter.setRowFilter(
+                    RowFilter.regexFilter(
+                            "^" + java.util.regex.Pattern.quote(selectedDate) + "$",
+                            2
+                    )
+            );
+        });
+
+        clearBtn.addActionListener(e -> {
+            dateChooser.setDate(null);
+            sorter.setRowFilter(null);
+            table.clearSelection();
+        });
+
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2 &&
+                        SwingUtilities.isLeftMouseButton(e)) {
 
-                if (e.getClickCount() == 2) {
-
-                    int selectedRow = table.getSelectedRow();
+                    int selectedRow = table.rowAtPoint(e.getPoint());
 
                     if (selectedRow != -1) {
+                        int modelRow = table.convertRowIndexToModel(selectedRow);
 
                         String attendanceID = model.getValueAt(
-                                selectedRow, 0
+                                modelRow, 0
                         ).toString();
 
                         mainFrame.showMarkAttendance(attendanceID);
@@ -182,7 +311,7 @@ public class AttendanceOfficer extends User{
                 }
             }
         });
-        
+
         addBtn.addActionListener(e -> {
             addAttendanceList(model, classID);
         });
@@ -191,19 +320,28 @@ public class AttendanceOfficer extends User{
             mainFrame.showPanel("viewClass");
         });
 
-        panel.add(title, BorderLayout.NORTH);
+        JPanel topPanel = new JPanel(new BorderLayout());
+
+        topPanel.add(title, BorderLayout.NORTH);
+        topPanel.add(searchPanel, BorderLayout.SOUTH);
+
+        panel.add(topPanel, BorderLayout.NORTH);
         panel.add(scrollPane, BorderLayout.CENTER);
         panel.add(bottomPanel, BorderLayout.SOUTH);
 
         return panel;
     }
     
+    
     public void addAttendanceList(DefaultTableModel model, String classID) {
 
         try {
             Path attendancePath = Path.of("attendanceList.txt");
             Path studentAttendancePath = Path.of("studentAttendance.txt");
+            Path studentPath = Path.of("student.txt");
+            Path schedulePath = Path.of("schedules.txt");
 
+            // Create attendance files if they do not exist
             if (Files.notExists(attendancePath)) {
                 Files.createFile(attendancePath);
             }
@@ -212,28 +350,72 @@ public class AttendanceOfficer extends User{
                 Files.createFile(studentAttendancePath);
             }
 
-
-            Path studentPath = Path.of("Student.txt");
-
+            // Check student file
             if (Files.notExists(studentPath)) {
                 JOptionPane.showMessageDialog(null,
                         "Student file not found.");
                 return;
             }
 
-            JDateChooser dateChooser = new JDateChooser();
-            dateChooser.setDateFormatString("yyyy-MM-dd");
-            dateChooser.setDate(new Date());
+            // Check schedule file
+            if (Files.notExists(schedulePath)) {
+                JOptionPane.showMessageDialog(null,
+                        "Schedule file not found.");
+                return;
+            }
 
-            JPanel inputPanel = new JPanel(new GridLayout(3, 2, 5, 5));
+            // Get available schedules for this class
+            JComboBox<String> scheduleCombo = new JComboBox<>();
+
+            List<String> scheduleLines =
+                    Files.readAllLines(schedulePath);
+
+            Map<String, String> scheduleDates = new HashMap<>();
+
+            for (String line : scheduleLines) {
+
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
+
+                String[] parts = line.split("\\|", -1);
+
+                if (parts.length >= 7
+                        && parts[0].trim().equals(classID)
+                        && parts[6].trim().equalsIgnoreCase("Available")) {
+
+                    String scheduleInfo =
+                            parts[1].trim() + " - "
+                            + parts[2].trim() + " - "
+                            + parts[3].trim() + " - "
+                            + parts[4].trim();
+
+                    scheduleCombo.addItem(scheduleInfo);
+
+                    scheduleDates.put(scheduleInfo, parts[3].trim());
+                }
+            }
+
+            // Check available schedules
+            if (scheduleCombo.getItemCount() == 0) {
+                JOptionPane.showMessageDialog(null,
+                        "No available schedule for this class.");
+                return;
+            }
+
+            // Input panel
+            JPanel inputPanel = new JPanel(
+                    new GridLayout(3, 2, 5, 5));
 
             inputPanel.add(new JLabel("Class ID:"));
             inputPanel.add(new JLabel(classID));
-            inputPanel.add(new JLabel("Attendance Date:"));
-            inputPanel.add(dateChooser);
+
+            inputPanel.add(new JLabel("Schedule:"));
+            inputPanel.add(scheduleCombo);
+
             inputPanel.add(new JLabel("Created By:"));
             inputPanel.add(new JLabel(this.userName));
-                    
+
             int result = JOptionPane.showConfirmDialog(
                     null,
                     inputPanel,
@@ -246,34 +428,37 @@ public class AttendanceOfficer extends User{
                 return;
             }
 
+            // Get selected schedule and date
+            String selectedSchedule =
+                    (String) scheduleCombo.getSelectedItem();
 
-            Date selectedDate = dateChooser.getDate();
-
-            if (selectedDate == null) {
+            if (selectedSchedule == null) {
                 JOptionPane.showMessageDialog(null,
-                        "Please select a date.");
+                        "Please select a schedule.");
                 return;
             }
-            
-            
-            String date = new SimpleDateFormat("yyyy-MM-dd")
-                    .format(selectedDate);
 
-            List<String> studentLines = Files.readAllLines(studentPath);
+            String date = scheduleDates.get(selectedSchedule);
+
+            // Get students belonging to this class
+            List<String> studentLines =
+                    Files.readAllLines(studentPath);
 
             List<String> studentIDs = new ArrayList<>();
 
             for (String line : studentLines) {
+
                 if (line.trim().isEmpty()) {
                     continue;
                 }
+
                 String[] parts = line.split("\\|", -1);
 
                 if (parts.length >= 4
-                        && parts[2].equalsIgnoreCase("Student")
-                        && parts[3].equals(classID)) {
+                        && parts[2].trim().equalsIgnoreCase("Student")
+                        && parts[3].trim().equals(classID)) {
 
-                    studentIDs.add(parts[0]);
+                    studentIDs.add(parts[0].trim());
                 }
             }
 
@@ -283,14 +468,18 @@ public class AttendanceOfficer extends User{
                 return;
             }
 
+            // Generate next Attendance ID
             int nextID = 1;
+
             List<String> attendanceLines =
                     Files.readAllLines(attendancePath);
 
             for (String line : attendanceLines) {
+
                 if (line.trim().isEmpty()) {
                     continue;
                 }
+
                 String[] parts = line.split("\\|", -1);
 
                 if (parts.length >= 1 && parts[0].startsWith("A")) {
@@ -302,14 +491,22 @@ public class AttendanceOfficer extends User{
                         if (number >= nextID) {
                             nextID = number + 1;
                         }
+
                     } catch (NumberFormatException ex) {
-                        
+
                     }
                 }
             }
 
-            String attendanceID = String.format("A%03d", nextID);
-            String attendanceRecord = attendanceID + "|" + classID + "|" + date + "|" + this.userName;
+            String attendanceID =
+                    String.format("A%03d", nextID);
+
+            // Save attendance record
+            String attendanceRecord =
+                    attendanceID + "|"
+                    + classID + "|"
+                    + date + "|"
+                    + this.userName;
 
             Files.writeString(
                     attendancePath,
@@ -317,10 +514,16 @@ public class AttendanceOfficer extends User{
                     StandardOpenOption.APPEND
             );
 
-            List<String> studentAttendanceRecords = new ArrayList<>();
+            // Create student attendance records
+            List<String> studentAttendanceRecords =
+                    new ArrayList<>();
 
             for (String studentID : studentIDs) {
-                String record = attendanceID + "|" + studentID + "|Absent";
+
+                String record =
+                        attendanceID + "|"
+                        + studentID + "|Absent";
+
                 studentAttendanceRecords.add(record);
             }
 
@@ -330,7 +533,13 @@ public class AttendanceOfficer extends User{
                     StandardOpenOption.APPEND
             );
 
-            model.addRow(new Object[]{attendanceID,classID,date,this.userName});
+            // Update JTable
+            model.addRow(new Object[]{
+                attendanceID,
+                classID,
+                date,
+                this.userName
+            });
 
             JOptionPane.showMessageDialog(null,
                     "Attendance List added successfully!");
@@ -341,17 +550,16 @@ public class AttendanceOfficer extends User{
                     "Error: " + ex.getMessage());
         }
     }
+
     
+
     public JPanel markAttendance(MainFrame mainFrame, String attendanceID) {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         JLabel title = new JLabel("Mark Attendance - " + attendanceID, JLabel.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 22));
 
-        // Store each student's attendance status
         Map<String, String> statusMap = new LinkedHashMap<>();
-        // Store each student's row panel
         Map<String, JPanel> rowMap = new HashMap<>();
-        // Store student names
         Map<String, String> studentNames = new HashMap<>();
 
         try {
@@ -368,8 +576,8 @@ public class AttendanceOfficer extends User{
                 return panel;
             }
 
-
             List<String> studentLines = Files.readAllLines(studentPath);
+
             for (String line : studentLines) {
                 if (line.trim().isEmpty()) {
                     continue;
@@ -378,38 +586,42 @@ public class AttendanceOfficer extends User{
                 String[] parts = line.split("\\|", -1);
 
                 if (parts.length >= 2) {
-                    studentNames.put(parts[0], parts[1]);
+                    studentNames.put(parts[0].trim(), parts[1].trim());
                 }
             }
 
             List<String> attendanceLines =
                     Files.readAllLines(studentAttendancePath);
+
             JPanel studentListPanel = new JPanel();
             studentListPanel.setLayout(new BoxLayout(
                     studentListPanel, BoxLayout.Y_AXIS
             ));
 
             boolean found = false;
-            for (String line : attendanceLines) {
 
+            for (String line : attendanceLines) {
                 if (line.trim().isEmpty()) {
                     continue;
                 }
 
                 String[] parts = line.split("\\|", -1);
-                
-                if (parts.length < 3 || !parts[0].equals(attendanceID)) {
+
+                if (parts.length < 3 || !parts[0].trim().equals(attendanceID)) {
                     continue;
                 }
+
                 found = true;
-                String studentID = parts[1];
-                String status = parts[2];
+
+                String studentID = parts[1].trim();
+                String status = parts[2].trim();
 
                 if (status.isEmpty()) {
                     status = "Absent";
                 }
 
                 statusMap.put(studentID, status);
+
                 String studentName = studentNames.getOrDefault(
                         studentID, "Unknown Student"
                 );
@@ -429,6 +641,7 @@ public class AttendanceOfficer extends User{
                 JPanel buttonPanel = new JPanel(
                         new FlowLayout(FlowLayout.RIGHT, 5, 0)
                 );
+
                 buttonPanel.setOpaque(false);
 
                 JButton absentBtn = new JButton("Absent");
@@ -493,7 +706,6 @@ public class AttendanceOfficer extends User{
                 updateRowColor.run();
 
                 rowMap.put(studentID, studentRow);
-
                 studentListPanel.add(studentRow);
             }
 
@@ -503,6 +715,69 @@ public class AttendanceOfficer extends User{
                 );
                 return panel;
             }
+
+            String[] filterOptions = {
+                "All",
+                "Student Name",
+                "Student ID"
+            };
+
+            JComboBox<String> filterBox = new JComboBox<>(filterOptions);
+            JTextField searchField = new JTextField(15);
+
+            JButton searchBtn = new JButton("Search");
+            JButton clearBtn = new JButton("Clear");
+
+            JPanel searchPanel = new JPanel(new FlowLayout());
+
+            searchPanel.add(new JLabel("Filter By:"));
+            searchPanel.add(filterBox);
+            searchPanel.add(new JLabel("Search:"));
+            searchPanel.add(searchField);
+            searchPanel.add(clearBtn);
+
+            Runnable filterStudents = () -> {
+                String keyword = searchField.getText().trim().toLowerCase();
+                int selectedFilter = filterBox.getSelectedIndex();
+
+                for (String studentID : rowMap.keySet()) {
+                    String studentName = studentNames.getOrDefault(
+                            studentID, "Unknown Student"
+                    ).toLowerCase();
+
+                    boolean matches;
+
+                    if (keyword.isEmpty()) {
+                        matches = true;
+                    } else if (selectedFilter == 1) {
+                        matches = studentName.contains(keyword);
+                    } else if (selectedFilter == 2) {
+                        matches = studentID.toLowerCase().contains(keyword);
+                    } else {
+                        matches = studentName.contains(keyword)
+                                || studentID.toLowerCase().contains(keyword);
+                    }
+
+                    rowMap.get(studentID).setVisible(matches);
+                }
+
+                studentListPanel.revalidate();
+                studentListPanel.repaint();
+            };
+
+            searchField.addActionListener(e -> filterStudents.run());
+
+            clearBtn.addActionListener(e -> {
+                searchField.setText("");
+                filterBox.setSelectedIndex(0);
+
+                for (JPanel studentRow : rowMap.values()) {
+                    studentRow.setVisible(true);
+                }
+
+                studentListPanel.revalidate();
+                studentListPanel.repaint();
+            });
 
             JScrollPane scrollPane = new JScrollPane(studentListPanel);
 
@@ -515,12 +790,15 @@ public class AttendanceOfficer extends User{
                 mainFrame.showPanel("AttendanceList");
             });
 
-            panel.add(title, BorderLayout.NORTH);
+            JPanel topPanel = new JPanel(new BorderLayout());
+            topPanel.add(title, BorderLayout.NORTH);
+            topPanel.add(searchPanel, BorderLayout.SOUTH);
+
+            panel.add(topPanel, BorderLayout.NORTH);
             panel.add(scrollPane, BorderLayout.CENTER);
             panel.add(bottomPanel, BorderLayout.SOUTH);
 
         } catch (IOException ex) {
-
             JOptionPane.showMessageDialog(
                     panel, "Error: " + ex.getMessage()
             );
@@ -528,6 +806,7 @@ public class AttendanceOfficer extends User{
 
         return panel;
     }
+
     
     private void updateStudentStatus(
             String attendanceID,
