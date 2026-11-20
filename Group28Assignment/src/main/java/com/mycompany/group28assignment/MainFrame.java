@@ -98,36 +98,25 @@ public class MainFrame extends JFrame {
         cards.show(container, "EditAdminPanel");
     }
 
-    private JPanel attendance_officerPanel(AttendanceOfficer o) {
-
-        JPanel panel = new JPanel(new GridLayout(4, 4, 8, 8));
-
+    private JPanel attendance_officerPanel(AttendanceOfficer o){
+        JPanel panel = new JPanel(new GridLayout(4,4,8,8));
         JButton viewBtn = new JButton("View Attendance Records");
-        JButton searchBtn = new JButton("Search Attendance Records");
         JButton reportBtn = new JButton("Generate Attendance Report");
         JButton logoutBtn = new JButton("Log Out");
-
+        
         viewBtn.addActionListener(e -> {
             showPanel("viewClass");
         });
-
-        searchBtn.addActionListener(e -> {
-            showPanel("searchAttendance");
-        });
-
         reportBtn.addActionListener(e -> {
             showPanel("GenerateReport");
         });
-
         logoutBtn.addActionListener(e -> {
             showPanel("CreateManager");
         });
-
+        
         panel.add(viewBtn);
-        panel.add(searchBtn);
         panel.add(reportBtn);
         panel.add(logoutBtn);
-
         return panel;
     }
 
