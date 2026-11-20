@@ -1,0 +1,335 @@
+
+package com.mycompany.group28assignment;
+
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.table.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.util.*;
+import java.util.List;
+
+public class FacilityProblemManagement extends JPanel {
+
+    private final Path dataDir = Paths.get("data");
+    private final Path problemsFile =
+            dataDir.resolve("facility_problems.txt");
+
+    private final String[] columns = {
+        "Problem ID",
+        "Equipment ID",
+        "Equipment Name",
+        "Location",
+        "Description",
+        "Date",
+        "Status",
+        "Created By"
+    };
+
+    private final DefaultTableModel model =
+            new DefaultTableModel(columns, 0) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    };
+
+    private final JTable table = new JTable(model);
+
+    private final JTextField searchField =
+            new JTextField(20);
+
+    private final JLabel countLabel =
+            new JLabel("Showing: 0 / 0");
+
+    private final JButton updateButton =
+            new JButton("Update Status");
+
+    private final JButton backButton =
+            new JButton("Back");
+
+    private final TableRowSorter<DefaultTableModel> sorter =
+            new TableRowSorter<>(model);
+
+    private final MainFrame mainFrame;
+
+    public FacilityProblemManagement(MainFrame mainFrame) {
+
+        this.mainFrame = mainFrame;
+
+        setLayout(new BorderLayout(10, 10));
+        setBorder(BorderFactory.createEmptyBorder(
+                15, 15, 15, 15));
+
+        initializeGUI();
+        loadRecords();
+    }
+
+    private void initializeGUI() {
+
+        JPanel topPanel = new JPanel(new BorderLayout());
+
+        JLabel title = new JLabel(
+                "Facility Problem Management",
+                SwingConstants.CENTER);
+
+        title.setFont(new Font("Arial", Font.BOLD, 24));
+
+        title.setBorder(BorderFactory.createEmptyBorder(
+                5, 10, 15, 10));
+
+        topPanel.add(backButton, BorderLayout.WEST);
+        topPanel.add(title, BorderLayout.CENTER);
+
+        add(topPanel, BorderLayout.NORTH);
+
+        backButton.addActionListener(e ->
+                mainFrame.showPanel("Facility Officer")
+        );
+
+        JPanel buttonPanel = new JPanel(
+                new FlowLayout(FlowLayout.LEFT));
+
+        buttonPanel.add(new JLabel("Search by ID or Name:"));
+        buttonPanel.add(searchField);
+        buttonPanel.add(updateButton);
+
+        add(buttonPanel, BorderLayout.CENTER);
+
+        table.setRowHeight(24);
+        table.setFont(new Font("Arial", Font.PLAIN, 13));
+
+        table.getTableHeader().setFont(
+                new Font("Arial", Font.BOLD, 13));
+
+        table.setSelectionMode(
+                ListSelectionModel.SINGLE_SELECTION);
+
+        table.setRowSorter(sorter);
+        table.setFillsViewportHeight(true);
+
+        JScrollPane scrollPane = new JScrollPane(table);
+
+        scrollPane.setBorder(
+                BorderFactory.createTitledBorder(
+                        "Facility Problem Records"));
+
+        JPanel contentPanel = new JPanel(
+                new BorderLayout(10, 10));
+
+        contentPanel.add(buttonPanel, BorderLayout.NORTH);
+        contentPanel.add(scrollPane, BorderLayout.CENTER);
+
+        remove(buttonPanel);
+        add(contentPanel, BorderLayout.CENTER);
+
+        JPanel bottomPanel = new JPanel(
+                new BorderLayout());
+
+        bottomPanel.add(countLabel, BorderLayout.EAST);
+
+        add(bottomPanel, BorderLayout.SOUTH);
+
+        updateButton.addActionListener(e -> updateStatus());
+
+        searchField.getDocument().addDocumentListener(
+                new DocumentListener() {
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                filterRecords();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                filterRecords();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                filterRecords();
+            }
+        });
+    }
+
+    private void loadRecords() {
+
+        model.setRowCount(0);
+
+        try {
+
+            Files.createDirectories(dataDir);
+
+            if (!Files.exists(problemsFile)) {
+                updateCount();
+                return;
+            }
+
+            List<String> lines = Files.readAllLines(
+                    problemsFile,
+                    StandardCharsets.UTF_8);
+
+            for (String line : lines) {
+
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
+
+                String[] record = line.split("\\s*\\|\\s*", -1);
+
+                if (record.length >= 8) {
+
+                    model.addRow(Arrays.copyOf(record, 8));
+
+                } else if (record.length == 5) {
+                    model.addRow(new String[]{
+                        record[0],
+                        "",
+                        record[1],
+                        "",
+                        record[2],
+                        record[3],
+                        record[4],
+                        ""
+                    });
+                }
+            }
+
+            updateCount();
+
+        } catch (IOException ex) {
+
+            showError("Cannot load facility problems: "
+                    + ex.getMessage());
+        }
+    }
+
+    // Search records
+    private void filterRecords() {
+
+        String keyword = searchField.getText().trim();
+
+        if (keyword.isEmpty()) {
+
+            sorter.setRowFilter(null);
+
+        } else {
+
+            sorter.setRowFilter(
+                    RowFilter.regexFilter(
+                            "(?i)" + java.util.regex.Pattern.quote(keyword)));
+        }
+
+        updateCount();
+    }
+
+    // Update selected problem status
+    private void updateStatus() {
+
+        int selectedRow = table.getSelectedRow();
+
+        if (selectedRow < 0) {
+
+            showError("Please select a facility problem first.");
+            return;
+        }
+
+        int modelRow = table.convertRowIndexToModel(selectedRow);
+
+        String problemID = String.valueOf(
+                model.getValueAt(modelRow, 0));
+
+        String currentStatus = String.valueOf(
+                model.getValueAt(modelRow, 6));
+
+        String[] statuses = {
+            "Open",
+            "In Progress",
+            "Resolved"
+        };
+
+        JComboBox<String> statusBox =
+                new JComboBox<>(statuses);
+
+        statusBox.setSelectedItem(currentStatus);
+
+        int answer = JOptionPane.showConfirmDialog(
+                this,
+                statusBox,
+                "Update Problem Status - " + problemID,
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
+
+        if (answer != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        String newStatus = String.valueOf(
+                statusBox.getSelectedItem());
+
+        model.setValueAt(newStatus, modelRow, 6);
+
+        saveRecords();
+    }
+
+    // Save updated records
+    private void saveRecords() {
+
+        try {
+
+            List<String> lines = new ArrayList<>();
+
+            for (int i = 0; i < model.getRowCount(); i++) {
+
+                String[] record = new String[8];
+
+                for (int j = 0; j < 8; j++) {
+
+                    record[j] = String.valueOf(
+                            model.getValueAt(i, j));
+                }
+
+                lines.add(String.join(" | ", record));
+            }
+
+            Files.write(
+                    problemsFile,
+                    lines,
+                    StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Facility problem status updated successfully.");
+
+            loadRecords();
+
+        } catch (IOException ex) {
+
+            showError("Cannot save facility problems: "
+                    + ex.getMessage());
+
+            loadRecords();
+        }
+    }
+
+    private void updateCount() {
+
+        countLabel.setText(
+                "Showing: " + table.getRowCount()
+                + " / " + model.getRowCount());
+    }
+
+    private void showError(String message) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                message,
+                "Facility Problem Management",
+                JOptionPane.WARNING_MESSAGE);
+    }
+}
