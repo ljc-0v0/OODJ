@@ -49,7 +49,7 @@ public class InventoryEquipmentManagement extends User{
     private Equipment selectedEquipment;
 
     private JTextField txtId;
-    private JTextField txtName;
+    private JComboBox<String> cmbName;
     private JComboBox<String> cmbCategory;
     private JTextArea txtDescription;
     private JComboBox<String> cmbStatus;
@@ -69,6 +69,36 @@ public class InventoryEquipmentManagement extends User{
     private JDialog addDialog;
     private JSpinner spnNumberOfItems;
     private JLabel lblNumberOfItems;
+
+    private final String[] clothesEquipment = {
+        "Martial Arts Uniform (Gi)",
+        "Belt",
+        "Training T-Shirt",
+        "Training Shorts",
+        "Rash Guard"
+    };
+
+    private final String[] protectionEquipment = {
+        "Boxing Gloves",
+        "Protective Mask",
+        "Hand Wraps",
+        "Head Guard",
+        "Mouth Guard",
+        "Shin Guards",
+        "Chest Protector",
+        "Groin Guard"
+    };
+
+    private final String[] trainingEquipment = {
+        "Punching Bag",
+        "Focus Mitts",
+        "Kick Shield",
+        "Speed Bag",
+        "Jump Rope",
+        "Agility Ladder",
+        "Nunchaku",
+        "Training Staff"
+    };
 
     // ==================== EQUIPMENT CLASS ====================
 
@@ -162,8 +192,6 @@ public class InventoryEquipmentManagement extends User{
         txtId = new JTextField(15);
         txtId.setEditable(false);
 
-        txtName = new JTextField(15);
-
         String[] categories = {
             "Clothes",
             "Protection",
@@ -171,6 +199,9 @@ public class InventoryEquipmentManagement extends User{
         };
 
         cmbCategory = new JComboBox<>(categories);
+        cmbName = new JComboBox<>();
+        cmbCategory.addActionListener(e -> updateEquipmentNames());
+        updateEquipmentNames();
 
         txtDescription = new JTextArea(3, 15);
         txtDescription.setLineWrap(true);
@@ -196,7 +227,7 @@ public class InventoryEquipmentManagement extends User{
         txtAddedBy.setEditable(false);
 
         addFormField(formPanel, gbc, 0, "Equipment ID:", txtId);
-        addFormField(formPanel, gbc, 1, "Equipment Name:", txtName);
+        addFormComboField(formPanel, gbc, 1, "Equipment Name:", cmbName);
         addFormComboField(formPanel, gbc, 2, "Category:", cmbCategory);
 
         gbc.gridx = 0;
@@ -370,8 +401,12 @@ public class InventoryEquipmentManagement extends User{
             }
 
             txtId.setText(selectedEquipment.id);
-            txtName.setText(selectedEquipment.name);
             cmbCategory.setSelectedItem(selectedEquipment.category);
+            updateEquipmentNames();
+            if (!containsEquipmentName(selectedEquipment.name)) {
+                cmbName.addItem(selectedEquipment.name);
+            }
+            cmbName.setSelectedItem(selectedEquipment.name);
             txtDescription.setText(selectedEquipment.description);
             cmbStatus.setSelectedItem(selectedEquipment.status);
             cmbLocation.setSelectedItem(selectedEquipment.location);
@@ -381,8 +416,8 @@ public class InventoryEquipmentManagement extends User{
         } else {
             selectedEquipment = null;
             txtId.setText("");
-            txtName.setText("");
             cmbCategory.setSelectedIndex(0);
+            updateEquipmentNames();
             txtDescription.setText("");
             cmbStatus.setSelectedItem("Available");
             cmbLocation.setSelectedIndex(0);
@@ -438,6 +473,52 @@ public class InventoryEquipmentManagement extends User{
         addDialog.setMinimumSize(new Dimension(450, 480));
         addDialog.setLocationRelativeTo(mainFrame);
         addDialog.setVisible(true);
+    }
+
+    // ==================== FIXED EQUIPMENT NAME OPTIONS ====================
+
+    private void updateEquipmentNames() {
+
+        if (cmbName == null || cmbCategory == null) {
+            return;
+        }
+
+        cmbName.removeAllItems();
+
+        String category = String.valueOf(cmbCategory.getSelectedItem());
+        String[] names;
+
+        switch (category) {
+            case "Clothes":
+                names = clothesEquipment;
+                break;
+            case "Protection":
+                names = protectionEquipment;
+                break;
+            case "Training":
+                names = trainingEquipment;
+                break;
+            default:
+                names = new String[0];
+                break;
+        }
+
+        for (String name : names) {
+            cmbName.addItem(name);
+        }
+    }
+
+    private boolean containsEquipmentName(String name) {
+        if (name == null) {
+            return false;
+        }
+
+        for (int i = 0; i < cmbName.getItemCount(); i++) {
+            if (name.equalsIgnoreCase(cmbName.getItemAt(i))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // ==================== FORM FIELD HELPER ====================
@@ -567,25 +648,20 @@ public class InventoryEquipmentManagement extends User{
 
     private boolean validateInput() {
 
-        if (txtName.getText().trim().isEmpty()) {
-
+        if (cmbName.getSelectedItem() == null) {
             JOptionPane.showMessageDialog(
                     mainFrame,
-                    "Please enter the equipment name."
+                    "Please select an equipment name."
             );
-
-            txtName.requestFocus();
+            cmbName.requestFocus();
             return false;
         }
 
         if (txtAddedBy.getText().trim().isEmpty()) {
-
             JOptionPane.showMessageDialog(
                     mainFrame,
-                    "Please enter the name of the person responsible."
+                    "The logged-in user's name is unavailable."
             );
-
-            txtAddedBy.requestFocus();
             return false;
         }
 
@@ -614,7 +690,7 @@ public class InventoryEquipmentManagement extends User{
 
             Equipment item = new Equipment(
                     id,
-                    txtName.getText().trim(),
+                    cmbName.getSelectedItem().toString(),
                     cmbCategory.getSelectedItem().toString(),
                     txtDescription.getText().trim(),
                     1,
@@ -836,7 +912,7 @@ public class InventoryEquipmentManagement extends User{
 
         Equipment backup = copyEquipment(selectedEquipment);
 
-        selectedEquipment.name = txtName.getText().trim();
+        selectedEquipment.name = cmbName.getSelectedItem().toString();
         selectedEquipment.category = cmbCategory.getSelectedItem().toString();
         selectedEquipment.description = txtDescription.getText().trim();
         selectedEquipment.quantity = 1;
@@ -949,8 +1025,8 @@ public class InventoryEquipmentManagement extends User{
         selectedEquipment = null;
 
         txtId.setText("");
-        txtName.setText("");
         cmbCategory.setSelectedIndex(0);
+        updateEquipmentNames();
         txtDescription.setText("");
         cmbStatus.setSelectedItem("Available");
         cmbLocation.setSelectedIndex(0);
