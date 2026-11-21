@@ -100,8 +100,6 @@ public class InventoryEquipmentManagement extends User{
         "Training Staff"
     };
 
-    // ==================== EQUIPMENT CLASS ====================
-
     private static class Equipment {
 
         String id;
@@ -130,8 +128,6 @@ public class InventoryEquipmentManagement extends User{
         }
     }
 
-    // ==================== CONSTRUCTOR ====================
-
     public JPanel createFacilityOfficerPanel(MainFrame mainFrame) {
 
         this.mainFrame = mainFrame;
@@ -146,8 +142,6 @@ public class InventoryEquipmentManagement extends User{
 
         return mainPanel;
     }
-
-    // ==================== GUI ====================
 
     private JPanel mainPanel;
     
@@ -301,7 +295,6 @@ public class InventoryEquipmentManagement extends User{
                 "Equipment Records"
         ));
 
-        // BUTTON PANEL
         JPanel buttonPanel = new JPanel(
                 new FlowLayout(FlowLayout.LEFT)
         );
@@ -323,7 +316,6 @@ public class InventoryEquipmentManagement extends User{
         rightPanel.add(buttonPanel, BorderLayout.NORTH);
         rightPanel.add(tableScrollPane, BorderLayout.CENTER);
 
-        // STATUS MESSAGE
         lblMessage = new JLabel("Ready");
 
         lblMessage.setBorder(BorderFactory.createEmptyBorder(
@@ -343,7 +335,6 @@ public class InventoryEquipmentManagement extends User{
         mainPanel.add(contentPanel, BorderLayout.CENTER);
         mainPanel.add(lblMessage, BorderLayout.SOUTH);
 
-        // BUTTON ACTIONS
         btnAdd.addActionListener(e -> showAddDialog(false));
         btnSearch.addActionListener(e -> searchEquipment());
         btnFilter.addActionListener(e -> showFilterDialog());
@@ -390,8 +381,6 @@ public class InventoryEquipmentManagement extends User{
             }
         });
     }
-
-    // ==================== SHOW ADD / UPDATE EQUIPMENT DIALOG ====================
 
     private void showAddDialog(boolean isUpdate) {
 
@@ -475,8 +464,6 @@ public class InventoryEquipmentManagement extends User{
         addDialog.setVisible(true);
     }
 
-    // ==================== FIXED EQUIPMENT NAME OPTIONS ====================
-
     private void updateEquipmentNames() {
 
         if (cmbName == null || cmbCategory == null) {
@@ -521,8 +508,6 @@ public class InventoryEquipmentManagement extends User{
         return false;
     }
 
-    // ==================== FORM FIELD HELPER ====================
-
     private void addFormField(
             JPanel panel,
             GridBagConstraints gbc,
@@ -561,8 +546,6 @@ public class InventoryEquipmentManagement extends User{
         panel.add(comboBox, gbc);
     }
 
-    // ==================== LOCATION DROPDOWN ====================
-
     private JComboBox<String> createLocationComboBox() {
 
         String[] locations = new String[45];
@@ -584,8 +567,6 @@ public class InventoryEquipmentManagement extends User{
 
         return new JComboBox<>(locations);
     }
-    
-    // ==================== GENERATE EQUIPMENT ID ====================
 
     private String generateEquipmentId() {
 
@@ -644,8 +625,6 @@ public class InventoryEquipmentManagement extends User{
         return String.format("E%03d", nextId);
     }
 
-    // ==================== VALIDATE INPUT ====================
-
     private boolean validateInput() {
 
         if (cmbName.getSelectedItem() == null) {
@@ -667,8 +646,6 @@ public class InventoryEquipmentManagement extends User{
 
         return true;
     }
-
-    // ==================== ADD EQUIPMENT ====================
 
     private void addEquipment() {
 
@@ -733,8 +710,6 @@ public class InventoryEquipmentManagement extends User{
         }
     }
 
-    // ==================== DISPLAY ALL RECORDS ====================
-
     private void displayAllRecords() {
 
         selectedEquipment = null;
@@ -746,8 +721,6 @@ public class InventoryEquipmentManagement extends User{
 
         lblMessage.setText("");
     }
-
-    // ==================== ADD TABLE ROW ====================
 
     private void addTableRow(Equipment item) {
 
@@ -763,8 +736,6 @@ public class InventoryEquipmentManagement extends User{
             item.addedBy
         });
     }
-
-    // ==================== SEARCH AND FILTER EQUIPMENT ====================
 
     private void searchEquipment() {
         applyFilters();
@@ -806,8 +777,6 @@ public class InventoryEquipmentManagement extends User{
                 "Matching records: " + tableModel.getRowCount()
         );
     }
-
-    // ==================== FILTER DIALOG ====================
 
     private void showFilterDialog() {
 
@@ -897,8 +866,6 @@ public class InventoryEquipmentManagement extends User{
         filterDialog.setVisible(true);
     }
 
-    // ==================== UPDATE EQUIPMENT ====================
-
     private void updateEquipment() {
 
         if (selectedEquipment == null) {
@@ -942,8 +909,6 @@ public class InventoryEquipmentManagement extends User{
         }
     }
 
-    // ==================== DELETE EQUIPMENT ====================
-
     private void deleteEquipment() {
 
         if (selectedEquipment == null) {
@@ -986,8 +951,6 @@ public class InventoryEquipmentManagement extends User{
         }
     }
 
-    // ==================== FIND EQUIPMENT BY ID ====================
-
     private Equipment findEquipmentById(String id) {
 
         for (Equipment item : equipmentList) {
@@ -999,8 +962,6 @@ public class InventoryEquipmentManagement extends User{
 
         return null;
     }
-
-    // ==================== COPY EQUIPMENT ====================
 
     private Equipment copyEquipment(Equipment item) {
 
@@ -1016,8 +977,6 @@ public class InventoryEquipmentManagement extends User{
                 item.addedBy
         );
     }
-    
-    // ==================== CLEAR FORM ====================
 
     private void clearForm() {
 
@@ -1033,8 +992,6 @@ public class InventoryEquipmentManagement extends User{
         txtUpdatedDate.setText(LocalDate.now().toString());
         txtAddedBy.setText(userName);
     }
-
-    // ==================== LOAD FROM TXT FILE ====================
 
     private void loadFromFile() {
 
@@ -1091,8 +1048,6 @@ public class InventoryEquipmentManagement extends User{
             );
         }
     }
-
-    // ==================== SAVE TO TXT FILE ====================
 
     private boolean saveToFile() {
 
