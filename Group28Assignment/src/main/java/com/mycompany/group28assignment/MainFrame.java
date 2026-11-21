@@ -3,6 +3,8 @@ package com.mycompany.group28assignment;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.*;
+import java.util.function.Supplier;
 
 public class MainFrame extends JFrame {
 
@@ -10,93 +12,133 @@ public class MainFrame extends JFrame {
     private final CardLayout cards = new CardLayout();
     private final JPanel container = new JPanel(cards);
 
+    protected final Deque<String> history = new ArrayDeque<>();
+    private final Map<String, JPanel> cardMap = new HashMap<>();
+
     public MainFrame(User currentUser) {
         super("System");
 
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(900, 600);
-        setLocationRelativeTo(null);
-
         this.currentUser = currentUser;
+
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1000, 800);
+        setLocationRelativeTo(null);
         add(container);
 
         if (currentUser instanceof Manager m) {
 
             JPanel managerPanel = managerPanel(m);
 
-            container.add(managerPanel, "Manager");
-            container.add(m.createManagerPanel(this), "CreateManager");
+            addPanel("Manager", managerPanel);
+            addPanel("CreateManager", m.createManagerPanel(this));
 
-            cards.show(container, "Manager");
+            showPanel("Manager");
 
         } else if (currentUser instanceof AttendanceOfficer o) {
 
-            JPanel attendanceOfficerPanel = attendance_officerPanel(o);
+            JPanel attendancePanel = attendanceOfficerPanel();
 
-            container.add(attendanceOfficerPanel, "AttendanceOfficer");
-            container.add(o.viewClassPanel(this), "viewClass");
-            container.add(o.generateReportPanel(this), "GenerateReport");
+            addPanel("AttendanceOfficer", attendancePanel);
+            addPanel("viewClass", o.viewClassPanel(this));
+            addPanel("GenerateReport", o.generateReportPanel(this));
 
-            cards.show(container, "AttendanceOfficer");
+            showPanel("AttendanceOfficer");
 
-        } else if (currentUser instanceof Instructor instructor) {
+        } else if (currentUser instanceof Instructor i) {
 
-            container.add(
-                new InstructorPanel(
-                    this::logout,
-                    instructor.getUserName()
-                ),
-                "Instructor"
-            );
+            addPanel("Instructor", instructorPanel());
+            addPanel("Schedule", i.createSchedulePanel(this));
+            addPanel("Facility Problems",
+                    i.createFacilityProblemPanel(this));
+            addPanel("Ratings", i.createRatingPanel(this));
 
-            cards.show(container, "Instructor");
+            showPanel("Instructor");
         }
+    }
+
+    private void addPanel(String name, JPanel panel) {
+        cardMap.put(name, panel);
+        container.add(panel, name);
     }
 
     private JPanel managerPanel(Manager m) {
 
-        JPanel panel = new JPanel(new GridLayout(2, 2, 8, 8));
+        JPanel panel = new JPanel(new GridLayout(0, 1, 8, 8));
 
-        JButton createManagerBtn = new JButton("Add New Manager");
+        JButton createBtn = new JButton("Add New Manager");
 
-        createManagerBtn.addActionListener(e -> {
-            showPanel("CreateManager");
-        });
+        createBtn.addActionListener(e ->
+                showPanel("CreateManager"));
 
-        panel.add(createManagerBtn);
+        panel.add(createBtn);
+        panel.add(logoutBtn());
 
         return panel;
     }
 
-    private JPanel attendance_officerPanel(AttendanceOfficer o) {
+    private JPanel attendanceOfficerPanel() {
 
-        JPanel panel = new JPanel(new GridLayout(4, 4, 8, 8));
+        JPanel panel = new JPanel(new GridLayout(0, 1, 8, 8));
 
-        JButton viewBtn = new JButton("View Attendance Records");
-        JButton searchBtn = new JButton("Search Attendance Records");
-        JButton reportBtn = new JButton("Generate Attendance Report");
-        JButton logoutBtn = new JButton("Log Out");
+        JButton viewBtn =
+                new JButton("View Attendance Records");
 
-        viewBtn.addActionListener(e -> {
-            showPanel("viewClass");
-        });
+        JButton searchBtn =
+                new JButton("Search Attendance Records");
 
-        searchBtn.addActionListener(e -> {
-            showPanel("searchAttendance");
-        });
+        JButton reportBtn =
+                new JButton("Generate Attendance Report");
 
-        reportBtn.addActionListener(e -> {
-            showPanel("GenerateReport");
-        });
+        viewBtn.addActionListener(e ->
+                showPanel("viewClass"));
 
-        logoutBtn.addActionListener(e -> {
-            showPanel("CreateManager");
-        });
+        searchBtn.addActionListener(e ->
+                showPanel("searchAttendance"));
+
+        reportBtn.addActionListener(e ->
+                showPanel("GenerateReport"));
 
         panel.add(viewBtn);
         panel.add(searchBtn);
         panel.add(reportBtn);
-        panel.add(logoutBtn);
+        panel.add(logoutBtn());
+
+        return panel;
+    }
+
+    private JPanel instructorPanel() {
+
+        JPanel panel = new JPanel(new GridLayout(0, 1, 8, 8));
+
+        JLabel title = new JLabel(
+                "Instructor Dashboard",
+                SwingConstants.CENTER);
+
+        title.setFont(new Font("Arial", Font.BOLD, 24));
+
+        JButton scheduleBtn =
+                new JButton("Manage Schedule");
+
+        JButton facilityBtn =
+                new JButton("Manage Facility Problems");
+
+        JButton ratingBtn =
+                new JButton("View Ratings");
+
+        scheduleBtn.addActionListener(e ->
+                showPanel("Schedule"));
+
+        facilityBtn.addActionListener(e ->
+                showPanel("Facility Problems"));
+
+        ratingBtn.addActionListener(e ->
+                showPanel("Ratings"));
+
+        panel.add(title);
+        panel.add(scheduleBtn);
+        panel.add(facilityBtn);
+        panel.add(ratingBtn);
+        panel.add(logoutBtn());
 
         return panel;
     }
@@ -104,49 +146,77 @@ public class MainFrame extends JFrame {
     public void showAttendanceList(String classID) {
 
         AttendanceOfficer officer =
-            (AttendanceOfficer) currentUser;
+                (AttendanceOfficer) currentUser;
 
-        JPanel attendancePanel =
-            officer.viewAttendanceListPanel(this, classID);
+        JPanel panel =
+                officer.viewAttendanceListPanel(this, classID);
 
-        container.add(attendancePanel, "AttendanceList");
-        cards.show(container, "AttendanceList");
+        addPanel("AttendanceList", panel);
+        showPanel("AttendanceList");
     }
 
     public void showMarkAttendance(String attendanceID) {
 
         AttendanceOfficer officer =
-            (AttendanceOfficer) currentUser;
+                (AttendanceOfficer) currentUser;
 
-        JPanel markPanel =
-            officer.markAttendance(this, attendanceID);
+        JPanel panel =
+                officer.markAttendance(this, attendanceID);
 
-        container.add(markPanel, "MarkAttendance");
-        cards.show(container, "MarkAttendance");
-
-        container.revalidate();
-        container.repaint();
+        addPanel("MarkAttendance", panel);
+        showPanel("MarkAttendance");
     }
 
     public void showPanel(String name) {
         cards.show(container, name);
     }
 
+    public void back() {
+        if (!history.isEmpty()) {
+            showPanel(history.pop());
+        }
+    }
+
+    public void refresh(String name, Supplier<JPanel> builder) {
+
+        JPanel old = cardMap.get(name);
+
+        if (old != null) {
+            container.remove(old);
+        }
+
+        JPanel fresh = builder.get();
+
+        addPanel(name, fresh);
+        showPanel(name);
+
+        container.revalidate();
+        container.repaint();
+    }
+
+    private JButton logoutBtn() {
+
+        JButton button = new JButton("Log Out");
+
+        button.addActionListener(e -> logout());
+
+        return button;
+    }
+
     private void logout() {
 
         int answer = JOptionPane.showConfirmDialog(
-            this,
-            "Are you sure you want to log out?",
-            "Log Out",
-            JOptionPane.YES_NO_OPTION
+                this,
+                "Are you sure you want to log out?",
+                "Log Out",
+                JOptionPane.YES_NO_OPTION
         );
 
         if (answer == JOptionPane.YES_OPTION) {
             dispose();
 
             SwingUtilities.invokeLater(() ->
-                Group28Assignment.main(new String[0])
-            );
+                    Group28Assignment.main(new String[0]));
         }
     }
 }
