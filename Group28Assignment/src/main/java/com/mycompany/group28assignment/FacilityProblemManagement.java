@@ -11,6 +11,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 import java.util.List;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 public class FacilityProblemManagement extends JPanel {
 
@@ -44,9 +46,6 @@ public class FacilityProblemManagement extends JPanel {
 
     private final JLabel countLabel =
             new JLabel("Showing: 0 / 0");
-
-    private final JButton updateButton =
-            new JButton("Update Status");
 
     private final JButton backButton =
             new JButton("Back");
@@ -95,7 +94,6 @@ public class FacilityProblemManagement extends JPanel {
 
         buttonPanel.add(new JLabel("Search by ID or Name:"));
         buttonPanel.add(searchField);
-        buttonPanel.add(updateButton);
 
         add(buttonPanel, BorderLayout.CENTER);
 
@@ -107,6 +105,27 @@ public class FacilityProblemManagement extends JPanel {
 
         table.setSelectionMode(
                 ListSelectionModel.SINGLE_SELECTION);
+
+        table.addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+
+                if (e.getClickCount() == 2
+                        && SwingUtilities.isLeftMouseButton(e)) {
+
+                    int selectedRow = table.rowAtPoint(e.getPoint());
+
+                    if (selectedRow >= 0) {
+
+                        table.setRowSelectionInterval(
+                                selectedRow, selectedRow);
+
+                        updateStatus();
+                    }
+                }
+            }
+        });
 
         table.setRowSorter(sorter);
         table.setFillsViewportHeight(true);
@@ -132,8 +151,6 @@ public class FacilityProblemManagement extends JPanel {
         bottomPanel.add(countLabel, BorderLayout.EAST);
 
         add(bottomPanel, BorderLayout.SOUTH);
-
-        updateButton.addActionListener(e -> updateStatus());
 
         searchField.getDocument().addDocumentListener(
                 new DocumentListener() {
@@ -207,7 +224,6 @@ public class FacilityProblemManagement extends JPanel {
         }
     }
 
-    // Search records
     private void filterRecords() {
 
         String keyword = searchField.getText().trim();
@@ -220,30 +236,68 @@ public class FacilityProblemManagement extends JPanel {
 
             sorter.setRowFilter(
                     RowFilter.regexFilter(
-                            "(?i)" + java.util.regex.Pattern.quote(keyword)));
+                            "(?i)" + java.util.regex.Pattern.quote(keyword),
+                            0, 2
+                    )
+            );
         }
 
         updateCount();
     }
 
-    // Update selected problem status
     private void updateStatus() {
 
         int selectedRow = table.getSelectedRow();
 
         if (selectedRow < 0) {
-
             showError("Please select a facility problem first.");
             return;
         }
 
         int modelRow = table.convertRowIndexToModel(selectedRow);
 
-        String problemID = String.valueOf(
-                model.getValueAt(modelRow, 0));
+        String problemID = String.valueOf(model.getValueAt(modelRow, 0));
+        String equipmentID = String.valueOf(model.getValueAt(modelRow, 1));
+        String equipmentName = String.valueOf(model.getValueAt(modelRow, 2));
+        String location = String.valueOf(model.getValueAt(modelRow, 3));
+        String description = String.valueOf(model.getValueAt(modelRow, 4));
+        String date = String.valueOf(model.getValueAt(modelRow, 5));
+        String currentStatus = String.valueOf(model.getValueAt(modelRow, 6));
+        String createdBy = String.valueOf(model.getValueAt(modelRow, 7));
 
-        String currentStatus = String.valueOf(
-                model.getValueAt(modelRow, 6));
+        JPanel detailPanel = new JPanel(new GridLayout(0, 2, 10, 10));
+
+        detailPanel.add(new JLabel("Problem ID:"));
+        JTextField idField = new JTextField(problemID);
+        idField.setEditable(false);
+        detailPanel.add(idField);
+
+        detailPanel.add(new JLabel("Equipment ID:"));
+        JTextField equipmentIDField = new JTextField(equipmentID);
+        equipmentIDField.setEditable(false);
+        detailPanel.add(equipmentIDField);
+
+        detailPanel.add(new JLabel("Equipment Name:"));
+        JTextField nameField = new JTextField(equipmentName);
+        nameField.setEditable(false);
+        detailPanel.add(nameField);
+
+        detailPanel.add(new JLabel("Location:"));
+        JTextField locationField = new JTextField(location);
+        locationField.setEditable(false);
+        detailPanel.add(locationField);
+
+        detailPanel.add(new JLabel("Description:"));
+        JTextField descriptionField = new JTextField(description);
+        descriptionField.setEditable(false);
+        detailPanel.add(descriptionField);
+
+        detailPanel.add(new JLabel("Date:"));
+        JTextField dateField = new JTextField(date);
+        dateField.setEditable(false);
+        detailPanel.add(dateField);
+
+        detailPanel.add(new JLabel("Status:"));
 
         String[] statuses = {
             "Open",
@@ -251,31 +305,40 @@ public class FacilityProblemManagement extends JPanel {
             "Resolved"
         };
 
-        JComboBox<String> statusBox =
-                new JComboBox<>(statuses);
-
+        JComboBox<String> statusBox = new JComboBox<>(statuses);
         statusBox.setSelectedItem(currentStatus);
+        detailPanel.add(statusBox);
+
+        detailPanel.add(new JLabel("Created By:"));
+        JTextField createdByField = new JTextField(createdBy);
+        createdByField.setEditable(false);
+        detailPanel.add(createdByField);
 
         int answer = JOptionPane.showConfirmDialog(
                 this,
-                statusBox,
-                "Update Problem Status - " + problemID,
+                detailPanel,
+                "Facility Problem Details - " + problemID,
                 JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE);
+                JOptionPane.PLAIN_MESSAGE
+        );
 
         if (answer != JOptionPane.OK_OPTION) {
             return;
         }
-
-        String newStatus = String.valueOf(
-                statusBox.getSelectedItem());
+        
+        String newStatus = String.valueOf(statusBox.getSelectedItem());
 
         model.setValueAt(newStatus, modelRow, 6);
+
+        String currentDate = LocalDate.now().format(
+                DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+        model.setValueAt(currentDate, modelRow, 5);
 
         saveRecords();
     }
 
-    // Save updated records
+
     private void saveRecords() {
 
         try {
