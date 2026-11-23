@@ -19,6 +19,7 @@ public class FacilityProblemManagement extends JPanel {
     private final Path dataDir = Paths.get("data");
     private final Path problemsFile =
             dataDir.resolve("facility_problems.txt");
+    private JTextField txtSearch;
 
     private final String[] columns = {
         "Problem ID",
@@ -89,11 +90,16 @@ public class FacilityProblemManagement extends JPanel {
                 mainFrame.showPanel("Facility Officer")
         );
 
+        txtSearch = new JTextField(20);
         JPanel buttonPanel = new JPanel(
                 new FlowLayout(FlowLayout.LEFT));
+        
+        JButton btnRefresh = new JButton("Refresh");
 
         buttonPanel.add(new JLabel("Search by ID or Name:"));
         buttonPanel.add(searchField);
+        buttonPanel.add(btnRefresh);
+        
 
         add(buttonPanel, BorderLayout.CENTER);
 
@@ -126,6 +132,13 @@ public class FacilityProblemManagement extends JPanel {
                 }
             }
         });
+        
+        btnRefresh.addActionListener(e -> {
+            txtSearch.setText("");
+            loadRecords();
+        });
+    
+    
 
         table.setRowSorter(sorter);
         table.setFillsViewportHeight(true);
