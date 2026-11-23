@@ -1,2 +1,4 @@
-C001 | java | General | 2026-11-10 | 10:10 | 20 | Cancelled
-C002 | karte kid | karte | 2026-11-10 | 10:02 | 20 | Available
+C001 | java | General | 2026-11-10 | 10:10 | 20 | Cancelled | 0 | 60 | 
+C002 | karte kid | karte | 2026-11-10 | 10:02 | 20 | Available | 0 | 60 | 
+C004 | java | general | 2026-11-16 | 18:22 | 20 | Available | 110 | 60 | string3
+C005 | katre | general | 2026-11-16 | 18:53 | 20 | Available | 10 | 60 | s
