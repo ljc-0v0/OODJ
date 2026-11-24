@@ -9,6 +9,7 @@ import java.nio.file.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.table.DefaultTableCellRenderer;
 
 public class InventoryEquipmentManagement extends User{
     private MainFrame mainFrame;
@@ -43,6 +44,9 @@ public class InventoryEquipmentManagement extends User{
 
     private final Path nextIdFile =
             dataDir.resolve("equipment_next_id.txt").toAbsolutePath();
+    
+    private final Path problemFile =
+        dataDir.resolve("facility_problems.txt");
 
     private final List<Equipment> equipmentList = new ArrayList<>();
 
@@ -143,6 +147,15 @@ public class InventoryEquipmentManagement extends User{
         return mainPanel;
     }
 
+    public void refreshEquipmentRecords() {
+
+        loadFromFile();
+
+        if (tableModel != null) {
+            applyFilters();
+        }
+    }
+
     private JPanel mainPanel;
     
     private void initializeGUI() {
@@ -154,6 +167,18 @@ public class InventoryEquipmentManagement extends User{
 
         btnBack.addActionListener(e -> {
             mainFrame.showPanel("Facility Officer");
+        });
+        
+        JButton btnRefresh = new JButton("Refresh");
+        btnRefresh.addActionListener(e -> {
+            refreshEquipmentRecords();
+
+            JOptionPane.showMessageDialog(
+                    mainFrame,
+                    "Equipment Inventory refreshed successfully!",
+                    "Refresh Successful",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
         });
 
         JLabel title = new JLabel(
@@ -170,6 +195,7 @@ public class InventoryEquipmentManagement extends User{
 
         topPanel.add(btnBack, BorderLayout.WEST);
         topPanel.add(title, BorderLayout.CENTER);
+        topPanel.add(btnRefresh, BorderLayout.EAST);
 
         mainPanel.add(topPanel, BorderLayout.NORTH);
 
@@ -271,11 +297,80 @@ public class InventoryEquipmentManagement extends User{
 
         equipmentTable = new JTable(tableModel);
 
+    equipmentTable.setDefaultRenderer(
+            Object.class,
+            new DefaultTableCellRenderer() {
+
+        @Override
+        public Component getTableCellRendererComponent(
+                JTable table,
+                Object value,
+                boolean isSelected,
+                boolean hasFocus,
+                int row,
+                int column) {
+
+            Component component =
+                    super.getTableCellRendererComponent(
+                            table,
+                            value,
+                            isSelected,
+                            hasFocus,
+                            row,
+                            column
+                    );
+
+            String status = String.valueOf(
+                    table.getValueAt(row, 5)
+            ).trim();
+
+            if (isSelected) {
+
+                component.setBackground(
+                        table.getSelectionBackground()
+                );
+
+                component.setForeground(
+                        table.getSelectionForeground()
+                );
+
+            } else if (status.equalsIgnoreCase("Available")) {
+
+                component.setBackground(
+                        new Color(220, 252, 231)
+                );
+
+                component.setForeground(
+                        new Color(22, 101, 52)
+                );
+
+            } else if (status.equalsIgnoreCase("Unavailable")) {
+
+                component.setBackground(
+                        new Color(254, 226, 226)
+                );
+
+                component.setForeground(
+                        new Color(153, 27, 27)
+                );
+
+            } else {
+
+                component.setBackground(table.getBackground());
+                component.setForeground(table.getForeground());
+            }
+
+            return component;
+        }
+    });
+        
         equipmentTable.setSelectionMode(
                 ListSelectionModel.SINGLE_SELECTION
         );
 
-        equipmentTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        equipmentTable.setAutoResizeMode(
+                JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS
+        );
         equipmentTable.setRowHeight(24);
 
         int[] widths = {
@@ -866,6 +961,90 @@ public class InventoryEquipmentManagement extends User{
         filterDialog.setVisible(true);
     }
 
+    private void syncFacilityProblemStatus(
+            String equipmentId,
+            String equipmentStatus) throws IOException {
+
+        if (!Files.exists(problemFile)) {
+            throw new IOException(
+                    "Facility Problem file not found:\n"
+                    + problemFile.toAbsolutePath()
+            );
+        }
+
+        List<String> lines = Files.readAllLines(
+                problemFile,
+                StandardCharsets.UTF_8
+        );
+
+        String problemStatus;
+
+        if ("Unavailable".equalsIgnoreCase(equipmentStatus.trim())) {
+            problemStatus = "In Progress";
+        } else if ("Available".equalsIgnoreCase(equipmentStatus.trim())) {
+            problemStatus = "Resolved";
+        } else {
+            throw new IOException(
+                    "Unknown Equipment Status: " + equipmentStatus
+            );
+        }
+
+        int updatedCount = 0;
+
+        for (int i = 0; i < lines.size(); i++) {
+
+            String line = lines.get(i);
+
+            if (line.trim().isEmpty()) {
+                continue;
+            }
+
+            String[] data = line.split("\\s*\\|\\s*", -1);
+
+            if (data.length < 8) {
+                continue;
+            }
+
+            String problemEquipmentId = data[1].trim();
+
+            if (problemEquipmentId.equalsIgnoreCase(
+                    equipmentId.trim())) {
+
+                data[6] = problemStatus;
+                data[5] = LocalDate.now().toString();
+
+                lines.set(i, String.join(" | ", data));
+
+                updatedCount++;
+            }
+        }
+
+        if (updatedCount == 0) {
+            throw new IOException(
+                    "No Facility Problem found for Equipment ID: "
+                    + equipmentId
+                    + "\nPlease check the Equipment ID in both files."
+            );
+        }
+
+        Files.write(
+                problemFile,
+                lines,
+                StandardCharsets.UTF_8,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING
+        );
+
+        System.out.println(
+                "Facility Problem synchronization successful."
+        );
+
+        System.out.println("Equipment ID: " + equipmentId);
+        System.out.println("New Problem Status: " + problemStatus);
+        System.out.println("Updated Records: " + updatedCount);
+        System.out.println("File: " + problemFile.toAbsolutePath());
+    }
+    
     private void updateEquipment() {
 
         if (selectedEquipment == null) {
@@ -889,8 +1068,27 @@ public class InventoryEquipmentManagement extends User{
         selectedEquipment.addedBy = userName;
 
         if (saveToFile()) {
-            applyFilters();
 
+            try {
+                syncFacilityProblemStatus(
+                        selectedEquipment.id,
+                        selectedEquipment.status
+                );
+
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+
+        applyFilters();
+
+        if (addDialog != null && addDialog.isVisible()) {
+            addDialog.dispose();
+        }
+
+        selectedEquipment = null;
+
+        lblMessage.setText("Equipment updated successfully.");
+        
             if (addDialog != null && addDialog.isVisible()) {
                 addDialog.dispose();
             }
