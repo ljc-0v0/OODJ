@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
+import javax.swing.table.DefaultTableCellRenderer;
 
 public class EquipmentInventoryStockReport extends JPanel {
 
@@ -34,6 +35,7 @@ public class EquipmentInventoryStockReport extends JPanel {
     private JLabel lblAvailable;
     private JLabel lblUnavailable;
     private JLabel lblMessage;
+    private String activeStatusFilter = "";
 
     private final java.util.List<Object[]> allRecords =
             new ArrayList<>();
@@ -95,21 +97,68 @@ public class EquipmentInventoryStockReport extends JPanel {
         lblUnavailable = new JLabel("0", SwingConstants.CENTER);
 
         summaryPanel.add(createSummaryCard(
-                "Total Stock Quantity", lblTotalQuantity
-        ));
+                "Total Stock Quantity", lblTotalQuantity,
+                Color.WHITE,
+                Color.BLACK
+                ));
 
         summaryPanel.add(createSummaryCard(
-                "Equipment Types", lblTotalTypes
+                "Equipment Types", lblTotalTypes,
+                Color.WHITE,
+                Color.BLACK
         ));
 
-        summaryPanel.add(createSummaryCard(
-                "Available Stock", lblAvailable
-        ));
+        JPanel availableCard = createSummaryCard(
+                "Available Stock",
+                lblAvailable,
+                new Color(220, 252, 231),
+                new Color(22, 101, 52)
+        );
 
-        summaryPanel.add(createSummaryCard(
-                "Unavailable Stock", lblUnavailable
+        makeCardClickable(availableCard, () -> {
 
-        ));
+            if (activeStatusFilter.equals("Available")) {
+                activeStatusFilter = "";
+            } else {
+                activeStatusFilter = "Available";
+            }
+
+            displayGroupedRecords(txtSearch.getText().trim());
+
+            lblMessage.setText(
+                    activeStatusFilter.isEmpty()
+                    ? "Showing all equipment stock."
+                    : "Showing Available equipment only."
+            );
+        });
+
+        summaryPanel.add(availableCard);
+
+        JPanel unavailableCard = createSummaryCard(
+                "Unavailable Stock",
+                lblUnavailable,
+                new Color(254, 226, 226),
+                new Color(153, 27, 27)
+        );
+
+        makeCardClickable(unavailableCard, () -> {
+
+            if (activeStatusFilter.equals("Unavailable")) {
+                activeStatusFilter = "";
+            } else {
+                activeStatusFilter = "Unavailable";
+            }
+
+            displayGroupedRecords(txtSearch.getText().trim());
+
+            lblMessage.setText(
+                    activeStatusFilter.isEmpty()
+                    ? "Showing all equipment stock."
+                    : "Showing Unavailable equipment only."
+            );
+        });
+
+        summaryPanel.add(unavailableCard);
 
         JPanel searchPanel = new JPanel(
                 new FlowLayout(FlowLayout.LEFT)
@@ -238,9 +287,81 @@ public class EquipmentInventoryStockReport extends JPanel {
 
         detailTable = new JTable(detailModel);
 
+        detailTable.setDefaultRenderer(
+                Object.class,
+                new DefaultTableCellRenderer() {
+
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable table,
+                    Object value,
+                    boolean isSelected,
+                    boolean hasFocus,
+                    int row,
+                    int column) {
+
+                Component component =
+                        super.getTableCellRendererComponent(
+                                table,
+                                value,
+                                isSelected,
+                                hasFocus,
+                                row,
+                                column
+                        );
+
+                String status = String.valueOf(
+                        table.getValueAt(row, 5)
+                ).trim();
+
+                if (isSelected) {
+
+                    component.setBackground(
+                            table.getSelectionBackground()
+                    );
+
+                    component.setForeground(
+                            table.getSelectionForeground()
+                    );
+
+                } else if (status.equalsIgnoreCase("Available")) {
+
+                    component.setBackground(
+                            new Color(220, 252, 231)
+                    );
+
+                    component.setForeground(
+                            new Color(22, 101, 52)
+                    );
+
+                } else if (status.equalsIgnoreCase("Unavailable")) {
+
+                    component.setBackground(
+                            new Color(254, 226, 226)
+                    );
+
+                    component.setForeground(
+                            new Color(153, 27, 27)
+                    );
+
+                } else {
+
+                    component.setBackground(
+                            table.getBackground()
+                    );
+
+                    component.setForeground(
+                            table.getForeground()
+                    );
+                }
+
+                return component;
+            }
+        });
+
         detailTable.setRowHeight(25);
         detailTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-
+        
         int[] widths = {
             100, 160, 110, 200, 80, 110, 100, 110, 120
         };
@@ -299,10 +420,11 @@ public class EquipmentInventoryStockReport extends JPanel {
         });
 
         btnRefresh.addActionListener(e -> {
+            activeStatusFilter = "";
             txtSearch.setText("");
             loadEquipmentData();
         });
-
+        
         summaryTable.addMouseListener(new MouseAdapter() {
 
             @Override
@@ -329,9 +451,13 @@ public class EquipmentInventoryStockReport extends JPanel {
 
     private JPanel createSummaryCard(
             String title,
-            JLabel valueLabel) {
+            JLabel valueLabel,
+            Color backgroundColor,
+            Color textColor) {
 
         JPanel panel = new JPanel(new BorderLayout(5, 5));
+
+        panel.setBackground(backgroundColor);
 
         panel.setBorder(
                 BorderFactory.createLineBorder(Color.GRAY)
@@ -346,14 +472,50 @@ public class EquipmentInventoryStockReport extends JPanel {
                 new Font("Arial", Font.BOLD, 13)
         );
 
+        titleLabel.setForeground(textColor);
+        titleLabel.setOpaque(true);
+        titleLabel.setBackground(backgroundColor);
+
         valueLabel.setFont(
                 new Font("Arial", Font.BOLD, 22)
         );
+
+        valueLabel.setForeground(textColor);
+        valueLabel.setOpaque(true);
+        valueLabel.setBackground(backgroundColor);
 
         panel.add(titleLabel, BorderLayout.NORTH);
         panel.add(valueLabel, BorderLayout.CENTER);
 
         return panel;
+    }
+    
+    private void makeCardClickable(
+            JPanel card,
+            Runnable action) {
+
+        MouseAdapter mouseAdapter = new MouseAdapter() {
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                action.run();
+            }
+        };
+
+        card.setCursor(
+                new Cursor(Cursor.HAND_CURSOR)
+        );
+
+        card.addMouseListener(mouseAdapter);
+
+        for (Component component : card.getComponents()) {
+
+            component.setCursor(
+                    new Cursor(Cursor.HAND_CURSOR)
+            );
+
+            component.addMouseListener(mouseAdapter);
+        }
     }
 
     private void loadEquipmentData() {
@@ -503,20 +665,29 @@ public class EquipmentInventoryStockReport extends JPanel {
                     displayNames.get(groupKey);
 
             int total = 0;
-            boolean matched = search.isEmpty();
+            boolean matched = false;
 
             for (Object[] record : records) {
 
                 int quantity = (int) record[4];
 
-                total += quantity;
-
                 String id = record[0].toString();
 
-                if (id.toLowerCase(Locale.ROOT).contains(search)
-                        || equipmentName.toLowerCase(Locale.ROOT)
-                                .contains(search)) {
+                String status = record[5].toString().trim();
 
+                boolean statusMatched =
+                        activeStatusFilter.isEmpty()
+                        || status.equalsIgnoreCase(activeStatusFilter);
+
+                boolean searchMatched =
+                        search.isEmpty()
+                        || id.toLowerCase(Locale.ROOT).contains(search)
+                        || equipmentName.toLowerCase(Locale.ROOT)
+                                .contains(search);
+
+                if (statusMatched && searchMatched) {
+
+                    total += quantity;
                     matched = true;
                 }
             }
@@ -568,7 +739,13 @@ public class EquipmentInventoryStockReport extends JPanel {
 
         for (Object[] record : records) {
 
-            detailModel.addRow(record);
+            String status = record[5].toString().trim();
+
+            if (activeStatusFilter.isEmpty()
+                    || status.equalsIgnoreCase(activeStatusFilter)) {
+
+                detailModel.addRow(record);
+            }
         }
 
         pageLayout.show(pageContainer, "Details");
