@@ -1,4 +1,3 @@
-
 package com.mycompany.group28assignment;
 
 import javax.swing.*;
@@ -19,6 +18,8 @@ public class FacilityProblemManagement extends JPanel {
     private final Path dataDir = Paths.get("data");
     private final Path problemsFile =
             dataDir.resolve("facility_problems.txt");
+    private final Path equipmentFile =
+        dataDir.resolve("equipment.txt");
     private JTextField txtSearch;
 
     private final String[] columns = {
@@ -105,6 +106,78 @@ public class FacilityProblemManagement extends JPanel {
 
         table.setRowHeight(24);
         table.setFont(new Font("Arial", Font.PLAIN, 13));
+        
+        table.setDefaultRenderer(
+                Object.class,
+                new DefaultTableCellRenderer() {
+
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable table,
+                    Object value,
+                    boolean isSelected,
+                    boolean hasFocus,
+                    int row,
+                    int column) {
+
+                Component component =
+                        super.getTableCellRendererComponent(
+                                table,
+                                value,
+                                isSelected,
+                                hasFocus,
+                                row,
+                                column
+                        );
+
+                String status = String.valueOf(
+                        table.getValueAt(row, 6)
+                ).trim();
+
+                if (isSelected) {
+
+                    component.setBackground(
+                            table.getSelectionBackground()
+                    );
+
+                    component.setForeground(
+                            table.getSelectionForeground()
+                    );
+
+                } else if (status.equalsIgnoreCase("In Progress")) {
+
+                    component.setBackground(
+                            new Color(254, 226, 226)
+                    );
+
+                    component.setForeground(
+                            new Color(153, 27, 27)
+                    );
+
+                } else if (status.equalsIgnoreCase("Resolved")) {
+
+                    component.setBackground(
+                            new Color(220, 252, 231)
+                    );
+
+                    component.setForeground(
+                            new Color(22, 101, 52)
+                    );
+
+                } else {
+
+                    component.setBackground(
+                            table.getBackground()
+                    );
+
+                    component.setForeground(
+                            table.getForeground()
+                    );
+                }
+
+                return component;
+            }
+        });
 
         table.getTableHeader().setFont(
                 new Font("Arial", Font.BOLD, 13));
@@ -313,7 +386,6 @@ public class FacilityProblemManagement extends JPanel {
         detailPanel.add(new JLabel("Status:"));
 
         String[] statuses = {
-            "Open",
             "In Progress",
             "Resolved"
         };
@@ -351,7 +423,6 @@ public class FacilityProblemManagement extends JPanel {
         saveRecords();
     }
 
-
     private void saveRecords() {
 
         try {
@@ -376,23 +447,30 @@ public class FacilityProblemManagement extends JPanel {
                     lines,
                     StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING);
+                    StandardOpenOption.TRUNCATE_EXISTING,
+                    StandardOpenOption.WRITE
+            );
+
+            syncEquipmentStatus();
 
             JOptionPane.showMessageDialog(
                     this,
-                    "Facility problem status updated successfully.");
+                    "Facility problem status updated successfully."
+            );
 
             loadRecords();
 
         } catch (IOException ex) {
 
-            showError("Cannot save facility problems: "
-                    + ex.getMessage());
+            showError(
+                    "Cannot update Facility Problem or Equipment Status:\n"
+                    + ex.getMessage()
+            );
 
             loadRecords();
         }
     }
-
+    
     private void updateCount() {
 
         countLabel.setText(
@@ -400,6 +478,90 @@ public class FacilityProblemManagement extends JPanel {
                 + " / " + model.getRowCount());
     }
 
+    private void syncEquipmentStatus() throws IOException {
+
+        if (!Files.exists(equipmentFile)) {
+            throw new IOException(
+                    "Equipment file not found:\n" + equipmentFile
+            );
+        }
+
+        if (!Files.exists(problemsFile)) {
+            throw new IOException(
+                    "Facility Problem file not found:\n" + problemsFile
+            );
+        }
+
+        List<String> problemLines = Files.readAllLines(
+                problemsFile,
+                StandardCharsets.UTF_8
+        );
+
+        List<String> equipmentLines = Files.readAllLines(
+                equipmentFile,
+                StandardCharsets.UTF_8
+        );
+
+        Set<String> unavailableEquipment = new HashSet<>();
+
+        for (String line : problemLines) {
+
+            if (line.trim().isEmpty()) {
+                continue;
+            }
+
+            String[] problem = line.split("\\s*\\|\\s*", -1);
+
+            if (problem.length >= 8) {
+
+                String equipmentID = problem[1].trim();
+                String problemStatus = problem[6].trim();
+
+                if ("In Progress".equalsIgnoreCase(problemStatus)) {
+                    unavailableEquipment.add(equipmentID);
+                }
+            }
+        }
+
+        List<String> updatedEquipmentLines = new ArrayList<>();
+
+        for (String line : equipmentLines) {
+
+            if (line.trim().isEmpty()) {
+                updatedEquipmentLines.add(line);
+                continue;
+            }
+
+            String[] equipment = line.split("\\s*\\|\\s*", -1);
+
+            if (equipment.length == 9) {
+
+                String equipmentID = equipment[0].trim();
+
+                if (unavailableEquipment.contains(equipmentID)) {
+                    equipment[5] = "Unavailable";
+                } else {
+                    equipment[5] = "Available";
+                }
+
+                equipment[7] = LocalDate.now().toString();
+
+                line = String.join(" | ", equipment);
+            }
+
+            updatedEquipmentLines.add(line);
+        }
+
+        Files.write(
+                equipmentFile,
+                updatedEquipmentLines,
+                StandardCharsets.UTF_8,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.WRITE
+        );
+    }
+    
     private void showError(String message) {
 
         JOptionPane.showMessageDialog(
@@ -409,3 +571,5 @@ public class FacilityProblemManagement extends JPanel {
                 JOptionPane.WARNING_MESSAGE);
     }
 }
+
+
