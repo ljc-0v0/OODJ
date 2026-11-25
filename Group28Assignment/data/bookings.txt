@@ -1,0 +1,7 @@
+UID000003 | C000002 | Chinese | 2026-12-02 | 09:00 AM | Booked
+UID000003 | C000004 | Drawing | 2026-12-05 | 02:00 PM | Cancelled
+UID000003 | C000001 | Math | 2026-12-01 | 10:00 AM | Cancelled
+UID000003 | C000003 | Bahasa | 2026-12-03 | 01:00 PM | Booked
+UID000003 | C000005 | Drawing | 2026-12-05 | 02:00 PM | Booked
+UID000003 | C000005 | Drawing | 2026-11-01 | 02:00 PM |Attended
+UID000003 | C000001 | Math | 2026-11-02 | 02:00 PM |Attended
