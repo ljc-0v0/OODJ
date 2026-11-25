@@ -3,14 +3,17 @@ package com.mycompany.group28assignment;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.*;
+import java.util.function.Supplier;
 
 public class MainFrame extends JFrame {
 
     private final User currentUser;
     private final CardLayout cards = new CardLayout();
     private final JPanel container = new JPanel(cards);
-
-    public MainFrame(User currentUser) {
+private final Map<String, JPanel> cardMap = new HashMap<>();
+  
+public MainFrame(User currentUser) {
         super("System");
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -20,10 +23,11 @@ public class MainFrame extends JFrame {
         this.currentUser = currentUser;
         add(container);
 
-        if (currentUser instanceof Manager m) {
-            // Create panels
-            JPanel managerPanel = managerPanel(m);
-
+       if (currentUser instanceof Manager m) {
+        JPanel managerPanel = managerPanel(m);
+        JPanel createManager = m.createManagerPanel(this);
+        JPanel viewManager = m.loadManagerPanel(this);
+        
             // Register each panel under a name
             cardMap.put("Manager", managerPanel);
             cardMap.put("CreateManager", m.createManagerPanel(this));
@@ -35,6 +39,7 @@ public class MainFrame extends JFrame {
             container.add(m.createAdminPanel(this), "CreateAdmin");
             container.add(m.loadAdminPanel(this), "ViewAdmin");
             cards.show(container, "Manager"); 
+            
         }  else if (currentUser instanceof AttendanceOfficer o) {
 
             JPanel attendanceOfficerPanel = attendance_officerPanel(o);
@@ -47,15 +52,61 @@ public class MainFrame extends JFrame {
 
         } else if (currentUser instanceof Instructor instructor) {
 
-            container.add(
-                new InstructorPanel(this::logout),
-                "Instructor"
-            );
+    container.add(instructor.createSchedulePanel(this), "Instructor");
 
-            cards.show(container, "Instructor");
-        }
+    cards.show(container, "Instructor");
+}
+         else if (currentUser instanceof Student s) {
+        JPanel studentPanel = studentPanel(s);
+        cardMap.put("Student", studentPanel);
+        container.add(studentPanel, "Student");
+        cards.show(container, "Student");
     }
+}
+    private JPanel studentPanel(Student s) {
+    JPanel panel = new JPanel(new GridLayout(0, 1, 8, 8));
+    panel.setBorder(BorderFactory.createEmptyBorder(40, 200, 40, 200));
 
+    panel.add(new JLabel("Welcome, " + s.getUserName(), SwingConstants.CENTER));
+
+    JButton rateBtn = new JButton("Rate Instructor");
+    rateBtn.addActionListener(e -> {
+        InstructorRating page = new InstructorRating(this, s.getStudentID());
+        page.setLocationRelativeTo(null);
+        page.setVisible(true);
+        this.setVisible(false);   // Back / X on the rating page shows MainFrame again
+    });
+
+    JButton bookBtn = new JButton("Book Classes");
+    bookBtn.addActionListener(e ->
+        JOptionPane.showMessageDialog(this, "Book Classes is not available yet."));
+
+    JButton myBookingBtn = new JButton("My Booking");
+    myBookingBtn.addActionListener(e ->
+        JOptionPane.showMessageDialog(this, "My Booking is not available yet."));
+
+  JButton paymentBtn = new JButton("Top Up / Payment History");
+paymentBtn.addActionListener(e -> {
+    Topupframe page = new Topupframe(s.getStudentID());
+    page.setLocationRelativeTo(null);
+    page.setVisible(true);
+});
+
+
+    panel.add(rateBtn);
+    panel.add(bookBtn);
+    panel.add(myBookingBtn);
+    panel.add(paymentBtn);
+    panel.add(logoutBtn());  
+   
+    return panel;
+}
+
+    private JButton logoutBtn() {
+    JButton btn = new JButton("Log Out");
+    btn.addActionListener(e -> logout());
+    return btn;
+}
    private JPanel managerPanel(Manager m){
         JPanel panel = new JPanel(new GridLayout(0,1,8,8));
         JButton loadManagerBtn = new JButton("View Managers");
@@ -98,6 +149,8 @@ public class MainFrame extends JFrame {
         cards.show(container, "EditAdminPanel");
     }
 
+   
+    
     private JPanel attendance_officerPanel(AttendanceOfficer o){
         JPanel panel = new JPanel(new GridLayout(3,3,8,8));
         JButton viewBtn = new JButton("View Attendance Records");
@@ -163,9 +216,7 @@ public class MainFrame extends JFrame {
         if (answer == JOptionPane.YES_OPTION) {
             dispose();
 
-            SwingUtilities.invokeLater(() ->
-                Group28Assignment.main(new String[0])
-            );
+            SwingUtilities.invokeLater(Group28Assignment::login);
         }
     }
 
@@ -182,3 +233,4 @@ public class MainFrame extends JFrame {
         container.repaint();
     }
 }
+
