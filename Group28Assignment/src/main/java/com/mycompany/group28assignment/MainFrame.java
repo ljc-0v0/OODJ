@@ -35,6 +35,7 @@ public class MainFrame extends JFrame {
             container.add(m.createAdminPanel(this), "CreateAdmin");
             container.add(m.loadAdminPanel(this), "ViewAdmin");
             cards.show(container, "Manager"); 
+            
         }  else if (currentUser instanceof AttendanceOfficer o) {
 
             JPanel attendanceOfficerPanel = attendance_officerPanel(o);
@@ -45,12 +46,41 @@ public class MainFrame extends JFrame {
 
             cards.show(container, "AttendanceOfficer");
 
-        } else if (currentUser instanceof Instructor instructor) {
+        } else if (currentUser instanceof InventoryEquipmentManagement f) {
 
-            container.add(
-                new InstructorPanel(this::logout),
-                "Instructor"
-            );
+            JPanel facilityOfficerPanel = facility_OfficerPanel(f);
+            JPanel equipmentPanel = f.createFacilityOfficerPanel(this);
+            JPanel problemPanel = new FacilityProblemManagement(this);
+            JPanel stockReportPanel = new EquipmentInventoryStockReport(this);
+
+            cardMap.put("Facility Officer", facilityOfficerPanel);
+            cardMap.put("View Equipment Inventory", equipmentPanel);
+            cardMap.put("Facility Problem Management", problemPanel);
+            cardMap.put("Equipment Stock Report", stockReportPanel);
+
+            container.add(facilityOfficerPanel, "Facility Officer");
+            container.add(equipmentPanel, "View Equipment Inventory");
+            container.add(problemPanel, "Facility Problem Management");
+            container.add(stockReportPanel, "Equipment Stock Report");
+
+            cards.show(container, "Facility Officer");
+            
+        } else if (currentUser instanceof Instructor i) {
+
+            JPanel instructorPanel = instructorPanel(i);
+            JPanel schedulePanel = i.createSchedulePanel(this);
+            JPanel facilityProblemPanel = i.createFacilityProblemPanel(this);
+            JPanel ratingPanel = i.createRatingPanel(this);
+
+            cardMap.put("Instructor", instructorPanel);
+            cardMap.put("Schedule", schedulePanel);
+            cardMap.put("Facility Problems", facilityProblemPanel);
+            cardMap.put("Ratings", ratingPanel);
+
+            container.add(instructorPanel, "Instructor");
+            container.add(schedulePanel, "Schedule");
+            container.add(facilityProblemPanel, "Facility Problems");
+            container.add(ratingPanel, "Ratings");
 
             cards.show(container, "Instructor");
         }
@@ -145,6 +175,83 @@ public class MainFrame extends JFrame {
 
         container.revalidate();
         container.repaint();
+    }
+
+    private JPanel facility_OfficerPanel(InventoryEquipmentManagement f) {
+
+        JPanel panel = new JPanel(new GridLayout(0, 1, 8, 8));
+
+        JLabel title = new JLabel(
+                "Facility Officer Dashboard",
+                SwingConstants.CENTER
+        );
+
+        title.setFont(new Font("Arial", Font.BOLD, 24));
+
+        JButton loadFacility_OfficerBtn =
+                new JButton("View Equipment Inventory");
+
+        JButton problemBtn =
+                new JButton("Facility Problem Management");
+
+        JButton stockReportBtn =
+                new JButton("Equipment Stock Report");
+
+        loadFacility_OfficerBtn.addActionListener(e ->
+                showPanel("View Equipment Inventory")
+        );
+
+        problemBtn.addActionListener(e ->
+                showPanel("Facility Problem Management")
+        );
+
+        stockReportBtn.addActionListener(e ->
+                showPanel("Equipment Stock Report")
+        );
+
+        panel.add(title);
+        panel.add(loadFacility_OfficerBtn);
+        panel.add(problemBtn);
+        panel.add(stockReportBtn);
+        panel.add(logoutBtn());
+
+        return panel;
+    }
+    
+    private JPanel instructorPanel(Instructor i) {
+
+        JPanel panel = new JPanel(new GridLayout(0, 1, 8, 8));
+
+        JLabel title = new JLabel(
+                "Instructor Dashboard",
+                SwingConstants.CENTER
+        );
+
+        title.setFont(new Font("Arial", Font.BOLD, 24));
+
+        JButton scheduleBtn = new JButton("Manage Schedule");
+        JButton facilityBtn = new JButton("Manage Facility Problems");
+        JButton ratingBtn = new JButton("View Ratings");
+
+        scheduleBtn.addActionListener(e -> {
+            showPanel("Schedule");
+        });
+
+        facilityBtn.addActionListener(e -> {
+            showPanel("Facility Problems");
+        });
+
+        ratingBtn.addActionListener(e -> {
+            showPanel("Ratings");
+        });
+
+        panel.add(title);
+        panel.add(scheduleBtn);
+        panel.add(facilityBtn);
+        panel.add(ratingBtn);
+        panel.add(logoutBtn());
+
+        return panel;
     }
 
     public void showPanel(String name) {
