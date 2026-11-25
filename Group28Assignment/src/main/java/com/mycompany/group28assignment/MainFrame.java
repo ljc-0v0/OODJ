@@ -3,12 +3,16 @@ package com.mycompany.group28assignment;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.*;
+import java.util.function.*;
 
 public class MainFrame extends JFrame {
 
     private final User currentUser;
     private final CardLayout cards = new CardLayout();
     private final JPanel container = new JPanel(cards);
+    protected final Deque<String> history = new ArrayDeque<>(); 
+    private final Map<String, JPanel> cardMap = new HashMap<>();
 
     public MainFrame(User currentUser) {
         super("System");
