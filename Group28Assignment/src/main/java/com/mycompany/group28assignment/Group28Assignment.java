@@ -12,9 +12,11 @@ public class Group28Assignment{
     public static void main(String[] args) {
 //        User m1 = new User("string","string","string","string","string","Manager","string");
 //        m1.storeInFile();
-        
-        login();
-    }
+   
+
+    login();
+}
+     
     
     public static void login(){
         JFrame loginFrame = new JFrame("Login");
@@ -75,6 +77,7 @@ public class Group28Assignment{
                             loginFrame.dispose();
                             accessControl(parts[0],parts[5]);
                             found = true;
+                            break;
                         }
                     }
                     if (found == false){
@@ -96,31 +99,35 @@ public class Group28Assignment{
         }); 
     }
     
-    public static void accessControl(String userID, String userRole){
-        try{
-            final User currentUser;
-            switch (userRole){
-    case "Manager" -> {
-        currentUser = new Manager(userID);
-    }
-    case "Instructor" -> {
-        currentUser = new Instructor(userID);
-    }
-    case "AttendanceOfficer" -> {
-        currentUser = new AttendanceOfficer(userID);
-    }
-                default -> {
-                    JOptionPane.showMessageDialog(null,
-                            "Unknown role: " + userRole,
-                            "Access denied", JOptionPane.ERROR_MESSAGE);
-                    return;                             
-                }
+   public static void accessControl(String userID, String userRole){
+    try{
+       
+
+        final User currentUser;
+        switch (userRole){
+            case "Manager" -> currentUser = new Manager(userID);
+            case "Instructor" -> currentUser = new Instructor(userID);
+            case "AttendanceOfficer" -> currentUser = new AttendanceOfficer(userID);
+            case "Student"-> currentUser = new Student(userID);
+            default -> {
+                JOptionPane.showMessageDialog(null,
+                        "Unknown role: " + userRole,
+                        "Access denied", JOptionPane.ERROR_MESSAGE);
+                return;
             }
-            
-            SwingUtilities.invokeLater(() -> new MainFrame(currentUser).setVisible(true));
-            
-        } catch(Exception ex){
-        
         }
+  SwingUtilities.invokeLater(() -> {
+    if (currentUser instanceof Student student) {
+        mainStudent studentDashboard = new mainStudent(student);
+        studentDashboard.setLocationRelativeTo(null);
+        studentDashboard.setVisible(true);
+    } else {
+        new MainFrame(currentUser).setVisible(true);
     }
+});      
+
+    } catch(Exception ex){
+        JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage());
+    }
+}
 }
