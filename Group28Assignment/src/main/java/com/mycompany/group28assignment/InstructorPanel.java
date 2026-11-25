@@ -34,7 +34,7 @@ public class InstructorPanel extends JPanel {
     private final String[] scheduleColumns = {
         "Class ID", "Class Name", "Discipline",
         "Date", "Time", "Capacity", "Status",
-        "Fee", "Duration", "Created By"
+       "Fee (RM)", "Duration (minute)", "Created By"
     };
 
     private final String[] problemColumns = {
@@ -397,7 +397,7 @@ public class InstructorPanel extends JPanel {
 
             if (p.length == 3) {
                 return new String[]{
-                    String.format("C%03d", number),
+                    String.format("C%06d", number)
                     p[0], "General", p[1], p[2],
                     "20", "Available", "0", "60", ""
                 };
@@ -541,7 +541,7 @@ public class InstructorPanel extends JPanel {
         String prefix = section == 0 ? "C" : "P";
         try {
             int highest = Math.max(highestExistingID(prefix), savedCounter(prefix));
-            return String.format("%s%03d", prefix, highest + 1);
+           return String.format("%s%0" + ("C".equals(prefix) ? 6 : 3) + "d", prefix, highest + 1);
         } catch (IOException ex) {
             showError("Cannot generate ID: " + ex.getMessage());
             return null;
