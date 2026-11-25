@@ -217,7 +217,7 @@ public class MainFrame extends JFrame {
         panel.add(loadFacility_OfficerBtn);
         panel.add(problemBtn);
         panel.add(stockReportBtn);
-        panel.add(logoutBtn());
+        panel.add(logout());
 
         return panel;
     }
@@ -253,7 +253,7 @@ public class MainFrame extends JFrame {
         panel.add(scheduleBtn);
         panel.add(facilityBtn);
         panel.add(ratingBtn);
-        panel.add(logoutBtn());
+        panel.add(logout());
 
         return panel;
     }
