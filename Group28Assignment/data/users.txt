@@ -1,0 +1,21 @@
+UID000001|string|string|b45cffe084dd3d20d928bee85e7b0f21|string|Manager|UID000001|true
+UID000002|string1|string@assa.ca|b45cffe084dd3d20d928bee85e7b0f21|012547863|Admin|UID000001|true
+UID000003|string2|string|b45cffe084dd3d20d928bee85e7b0f21|string|Student|UID000001|true
+UID000004|string3|string|b45cffe084dd3d20d928bee85e7b0f21|string|Instructor|UID000001|true
+UID000005|string4|string|b45cffe084dd3d20d928bee85e7b0f21|string|Attendance Officer|UID000001|true
+UID000006|string5|string|b45cffe084dd3d20d928bee85e7b0f21|string|Facility Officer|UID000001|true
+UID000007|sa|a@a.com|b45cffe084dd3d20d928bee85e7b0f21|012345678|Manager|UID000001|true
+UID000008|sdas|asd@asd.ASd|b45cffe084dd3d20d928bee85e7b0f21|012541258|Manager|UID000001|true
+UID000009|asd|sad@asd.cm|b45cffe084dd3d20d928bee85e7b0f21|012547896|Manager|string|false
+UID000010|sadasasd|sad@sad.asd|b45cffe084dd3d20d928bee85e7b0f21|012589637|Manager|UID000001|true
+UID000011|fdsa|asd@asd.cda|b45cffe084dd3d20d928bee85e7b0f21|014523678|Admin|string|false
+UID000012|admin1|ads@sd.asd|b45cffe084dd3d20d928bee85e7b0f21|012547836|Admin|UID000001|true
+UID000013|student1|ads@sd.asd|b45cffe084dd3d20d928bee85e7b0f21|012547836|Student|UID000001|true
+UID000014|instructor1|ads@sd.asd|b45cffe084dd3d20d928bee85e7b0f21|012547836|Instructor|UID000001|true
+UID000015|student2|ads@sd.asd|b45cffe084dd3d20d928bee85e7b0f21|012547836|Student|UID000001|true
+UID000016|instructor2|ads@sd.asd|b45cffe084dd3d20d928bee85e7b0f21|012547836|Instructor|UID000001|true
+UID000017|student3|ads@sd.asd|b45cffe084dd3d20d928bee85e7b0f21|012547836|Student|UID000001|true
+UID000018|instructor3|ads@sd.asd|b45cffe084dd3d20d928bee85e7b0f21|012547836|Instructor|UID000001|true
+UID000019|aaa|aaa@aa.cco|b45cffe084dd3d20d928bee85e7b0f21|456985632|Manager|UID000001|true
+UID000020|aaa1|aaaa@xs.com|f8f9e9dfccee3c92a581057772f9fa57|458796321|Admin|UID000001|true
+UID000021|bbb|asd@asdc.asd|ab0fc56bc575bb7e48fe00e188775a21|456321780|Manager|UID000015|true
