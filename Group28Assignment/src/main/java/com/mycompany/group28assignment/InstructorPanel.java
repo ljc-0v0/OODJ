@@ -34,7 +34,7 @@ public class InstructorPanel extends JPanel {
     private final String[] scheduleColumns = {
         "Class ID", "Class Name", "Discipline",
         "Date", "Time", "Capacity", "Status",
-       "Fee (RM)", "Duration (minute)", "Created By"
+        "Fee (RM)", "Duration (minute)", "Created By"
     };
 
     private final String[] problemColumns = {
@@ -49,6 +49,7 @@ public class InstructorPanel extends JPanel {
     };
 
     private final String creatorName;
+    private final String creatorUID;
     private final MainFrame mainFrame;
     private final int section;
 
@@ -99,6 +100,7 @@ public class InstructorPanel extends JPanel {
         this.mainFrame = mainFrame;
         this.section = section;
         this.creatorName = creatorName == null ? "" : creatorName.trim();
+        this.creatorUID = resolveInstructorUID(this.creatorName);
 
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
@@ -106,6 +108,31 @@ public class InstructorPanel extends JPanel {
         add(createWorkspace(), BorderLayout.CENTER);
 
         loadRecords();
+    }
+
+    // Resolve the logged-in instructor's unique ID from the existing users file.
+    // Instructor.java passes userName to this panel, so no MainFrame changes are needed.
+    private String resolveInstructorUID(String name) {
+        if (name.isBlank()) return "";
+        for (Path file : new Path[]{Paths.get("users.txt"), dataDir.resolve("users.txt")}) {
+            if (!Files.isRegularFile(file)) continue;
+            try {
+                String match = "";
+                for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
+                    String[] parts = line.split("\\|", -1);
+                    if (parts.length >= 6 && name.equalsIgnoreCase(parts[1].trim())
+                            && "Instructor".equalsIgnoreCase(parts[5].trim())) {
+                        if (!match.isEmpty() && !match.equals(parts[0].trim())) return "";
+                        match = parts[0].trim();
+                    }
+                }
+                if (!match.isEmpty()) return match;
+            } catch (IOException ex) {
+                showError("Cannot read instructor UID: " + ex.getMessage());
+                return "";
+            }
+        }
+        return "";
     }
 
     private JPanel createWorkspace() {
@@ -308,7 +335,7 @@ public class InstructorPanel extends JPanel {
     private List<Equipment> loadEquipment() throws IOException {
         if (!Files.isRegularFile(equipmentFile)) {
             throw new IOException(
-                    "equipment.txt was not found in the project root. "
+                    "equipment.txt was not found in the data folder. "
                     + "Get the latest file from your teammate's GitHub repository.");
         }
 
@@ -397,7 +424,7 @@ public class InstructorPanel extends JPanel {
 
             if (p.length == 3) {
                 return new String[]{
-                    String.format("C%06d", number)
+                    String.format("C%06d", number),
                     p[0], "General", p[1], p[2],
                     "20", "Available", "0", "60", ""
                 };
@@ -541,7 +568,7 @@ public class InstructorPanel extends JPanel {
         String prefix = section == 0 ? "C" : "P";
         try {
             int highest = Math.max(highestExistingID(prefix), savedCounter(prefix));
-           return String.format("%s%0" + ("C".equals(prefix) ? 6 : 3) + "d", prefix, highest + 1);
+            return String.format("%s%0" + ("C".equals(prefix) ? 6 : 3) + "d", prefix, highest + 1);
         } catch (IOException ex) {
             showError("Cannot generate ID: " + ex.getMessage());
             return null;
@@ -621,8 +648,8 @@ public class InstructorPanel extends JPanel {
     }
 
     private String[] showScheduleForm(String[] existing) {
-        if (creatorName.isBlank()) {
-            showError("Current login username is unavailable. Please reconnect login to MainFrame.");
+        if (creatorUID.isBlank()) {
+            showError("Instructor UID not found or username is not unique in users.txt.");
             return null;
         }
         String[] labels = scheduleColumns;
@@ -649,7 +676,7 @@ public class InstructorPanel extends JPanel {
                 inputs[i] = createTimeSpinner(value);
 
             } else if (i == 9) {
-                JTextField creator = new JTextField(existing == null ? creatorName : value, 20);
+                JTextField creator = new JTextField(creatorUID, 20);
                 creator.setEditable(false);
                 inputs[i] = creator;
 
@@ -753,6 +780,8 @@ public class InstructorPanel extends JPanel {
                 if (fee < 0 || duration <= 0) {
                     throw new IllegalArgumentException("Fee must be non-negative and duration must be positive.");
                 }
+                // Always persist the logged-in instructor UID, including legacy edits.
+                values[9] = creatorUID;
                 return values;
 
             } catch (Exception ex) {
@@ -998,8 +1027,11 @@ public class InstructorPanel extends JPanel {
         int ownerIndex = section == 0 ? 9 : 7;
         if (section == 2 || record.length <= ownerIndex) return false;
         String owner = record[ownerIndex] == null ? "" : record[ownerIndex].trim();
-        if (creatorName.isBlank() || owner.isBlank()
-                || !owner.equalsIgnoreCase(creatorName)) {
+        boolean ownerMatches = section == 0
+                ? (!creatorUID.isBlank() && owner.equalsIgnoreCase(creatorUID))
+                    || (!creatorName.isBlank() && owner.equalsIgnoreCase(creatorName))
+                : !creatorName.isBlank() && owner.equalsIgnoreCase(creatorName);
+        if (owner.isBlank() || !ownerMatches) {
             showError("Only the creator of this record can modify it.");
             return false;
         }
