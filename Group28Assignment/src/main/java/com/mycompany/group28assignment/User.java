@@ -45,7 +45,7 @@ public class User {
     
     public User(String userID){
         try{
-            List<String> lines = Files.readAllLines(Path.of("users.txt"));
+            List<String> lines = Files.readAllLines(Path.of("data/users.txt"));
             for (String line : lines){
                 String[] parts = line.split("\\|");
                 if (!userID.isEmpty() && userID.matches(parts[0])){
@@ -86,7 +86,7 @@ public class User {
     
     public void storeInFile(String role) {
         try {
-            List<String> lines = Files.readAllLines(Path.of("users.txt"));
+            List<String> lines = Files.readAllLines(Path.of("data/users.txt"));
             String last = null;
             for (int i = lines.size() - 1; i >= 0; i--) {
                 if (!lines.get(i).isBlank()) {
@@ -104,7 +104,7 @@ public class User {
             String line = String.join("|",
                     nextUserID, userName, userEmail,
                     userPassword, userPhoneNum, userRole, createdBy, Boolean.toString(status));
-            Files.writeString(Path.of("users.txt"),
+            Files.writeString(Path.of("data/users.txt"),
                     line +"\n",
                     StandardOpenOption.CREATE,
                     StandardOpenOption.APPEND);
@@ -116,7 +116,7 @@ public class User {
     public void editInFile(String userName, String userEmail,
                 String userPhoneNum, String createdBy, boolean status) {
         try {
-            List<String> lines = Files.readAllLines(Path.of("users.txt"));
+            List<String> lines = Files.readAllLines(Path.of("data/users.txt"));
             Path editTempFile = Path.of("editTempFile.txt");
             Files.write(editTempFile, new byte[0]);
             for (String line : lines){
@@ -134,7 +134,7 @@ public class User {
                             StandardOpenOption.APPEND);
                 }
             }
-            Files.move(editTempFile, Path.of("users.txt"), StandardCopyOption.REPLACE_EXISTING);
+            Files.move(editTempFile, Path.of("data/users.txt"), StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
             System.err.println("Failed to save user: " + e.getMessage());
         }
