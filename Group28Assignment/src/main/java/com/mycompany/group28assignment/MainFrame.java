@@ -32,14 +32,17 @@ public class MainFrame extends JFrame {
             cardMap.put("Manager", managerPanel);
             cardMap.put("CreateManager", m.createManagerPanel(this));
             cardMap.put("ViewManager", m.loadManagerPanel(this));
+            cardMap.put("ViewStaff", m.loadStaffPanel(this));
+            cardMap.put("ViewInstructor", m.loadInstructorPanel(this));
             
             container.add(managerPanel, "Manager");
             container.add(m.createManagerPanel(this), "CreateManager");
             container.add(m.loadManagerPanel(this), "ViewManager");
             container.add(m.createAdminPanel(this), "CreateAdmin");
             container.add(m.loadAdminPanel(this), "ViewAdmin");
+            container.add(m.loadStaffPanel(this), "ViewStaff");
+            container.add(m.loadInstructorPanel(this), "ViewInstructor");
             cards.show(container, "Manager"); 
-            
         }  else if (currentUser instanceof AttendanceOfficer o) {
 
             JPanel attendanceOfficerPanel = attendance_officerPanel(o);
@@ -90,22 +93,135 @@ public class MainFrame extends JFrame {
         }
     }
 
-   private JPanel managerPanel(Manager m){
-        JPanel panel = new JPanel(new GridLayout(0,1,8,8));
-        JButton loadManagerBtn = new JButton("View Managers");
-        loadManagerBtn.addActionListener(e -> {
-            showPanel("ViewManager");
-        });
-        panel.add(loadManagerBtn);
+  private JPanel managerPanel(Manager m) {
+        // Outer panel with soft background
+        JPanel outer = new JPanel(new BorderLayout());
+        outer.setBackground(new Color(245, 247, 250));
+        outer.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
+
+        // ---- Header ----
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
+        header.setBorder(BorderFactory.createEmptyBorder(0, 0, 25, 0));
+
+        JLabel title = new JLabel("Manager Dashboard");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        title.setForeground(new Color(33, 37, 41));
+
+        JLabel subtitle = new JLabel("Welcome, " + m.getUserName());
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        subtitle.setForeground(new Color(108, 117, 125));
+
+        JPanel titleBlock = new JPanel();
+        titleBlock.setOpaque(false);
+        titleBlock.setLayout(new BoxLayout(titleBlock, BoxLayout.Y_AXIS));
+        titleBlock.add(title);
+        titleBlock.add(Box.createVerticalStrut(4));
+        titleBlock.add(subtitle);
+
+        header.add(titleBlock, BorderLayout.WEST);
+
+        // ---- Card grid for actions ----
+        JPanel grid = new JPanel(new GridLayout(0, 2, 20, 20));
+        grid.setOpaque(false);
+
+        JButton loadManagerBtn = new JButton("Manage Managers");
+        loadManagerBtn.addActionListener(e -> showPanel("ViewManager"));
+
+        JButton loadAdminBtn = new JButton("Manage Administrators");
+        loadAdminBtn.addActionListener(e -> showPanel("ViewAdmin"));
         
-        JButton loadAdminBtn = new JButton("View Adminstrators");
-        loadAdminBtn.addActionListener(e -> {
-            showPanel("ViewAdmin");
-        });
-        panel.add(loadAdminBtn);
-        panel.add(logoutBtn());
+        JButton loadStaffBtn = new JButton("Manage Staff");
+        loadStaffBtn.addActionListener(e -> showPanel("ViewStaff"));
         
-        return panel;
+        JButton loadInstructorBtn = new JButton("View Comments");
+        loadInstructorBtn.addActionListener(e -> showPanel("ViewInstructor"));
+
+        styleCardButton(loadManagerBtn, "👥", "Manage manager accounts");
+        styleCardButton(loadAdminBtn, "🛡️", "Manage administrator accounts");
+        styleCardButton(loadStaffBtn, "🛡️", "Manage Staff");
+        styleCardButton(loadInstructorBtn, "🛡️", "View Comments");
+
+        grid.add(loadManagerBtn);
+        grid.add(loadAdminBtn);
+        grid.add(loadStaffBtn);
+        grid.add(loadInstructorBtn);
+
+        JButton logout = logoutBtn();
+        styleLogoutButton(logout);
+
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottom.setOpaque(false);
+        bottom.setBorder(BorderFactory.createEmptyBorder(25, 0, 0, 0));
+        bottom.add(logout);
+
+        outer.add(header, BorderLayout.NORTH);
+        outer.add(grid, BorderLayout.CENTER);
+        outer.add(bottom, BorderLayout.SOUTH);
+
+        return outer;
+    }
+
+// ---- Helper: nice card-style button ----
+    private void styleCardButton(JButton btn, String icon, String description) {
+        btn.setLayout(new BorderLayout());
+        btn.setBackground(Color.WHITE);
+        btn.setFocusPainted(false);
+        btn.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(222, 226, 230), 1, true),
+                BorderFactory.createEmptyBorder(20, 20, 20, 20)
+        ));
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        btn.setForeground(new Color(33, 37, 41));
+
+        JLabel iconLabel = new JLabel(icon);
+        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 34));
+
+        JLabel textLabel = new JLabel("<html><div style='width:160px;'>"
+                + btn.getText()
+                + "<br><span style='font-weight:normal;font-size:11px;color:#6c757d;'>"
+                + description + "</span></div></html>");
+
+        JPanel content = new JPanel();
+        content.setOpaque(false);
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        iconLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        textLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        content.add(iconLabel);
+        content.add(Box.createVerticalStrut(10));
+        content.add(textLabel);
+
+        btn.removeAll();
+        btn.add(content, BorderLayout.CENTER);
+
+        // Hover effect
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btn.setBackground(new Color(248, 249, 250));
+                btn.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(new Color(13, 110, 253), 1, true),
+                        BorderFactory.createEmptyBorder(20, 20, 20, 20)));
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btn.setBackground(Color.WHITE);
+                btn.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(new Color(222, 226, 230), 1, true),
+                        BorderFactory.createEmptyBorder(20, 20, 20, 20)));
+            }
+        });
+    }
+
+// ---- Helper: subtle logout button ----
+    private void styleLogoutButton(JButton btn) {
+        btn.setBackground(new Color(220, 53, 69));
+        btn.setForeground(Color.WHITE);
+        btn.setFocusPainted(false);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setBorder(BorderFactory.createEmptyBorder(10, 24, 10, 24));
+        btn.setOpaque(true);
     }
     
     public void showEditManagerPanel(String uid) {
@@ -130,6 +246,15 @@ public class MainFrame extends JFrame {
         container.add(editAdminPanel, "EditAdminPanel");
         cardMap.put("EditAdminPanel", editAdminPanel);
         cards.show(container, "EditAdminPanel");
+    }
+
+    public void showInstructorDetailPanel(String instructorUID) {
+        Manager manager = (Manager) currentUser;
+        JPanel detail = manager.instructorDetailPanel(this, instructorUID);
+
+        cardMap.put("InstructorDetail", detail);
+        container.add(detail, "InstructorDetail");
+        cards.show(container, "InstructorDetail");
     }
 
     private JPanel attendance_officerPanel(AttendanceOfficer o){
