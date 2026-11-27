@@ -1,0 +1,19 @@
+E001 | Boxing | Protection | abcd | 1 | Available | A2-2 | 2026-11-24 | string5
+E002 | Mask | training | abcd | 1 | Available | B1-1 | 2026-11-24 | Jack
+E003 | Gloves | Protection | psjd | 1 | Available | C1-1 | 2026-11-24 | Ken
+E004 | Punching Bags | Clothes | efg | 1 | Available | A1-1 | 2026-11-24 | string5
+E005 | Gloves | Protection | dsdc | 1 | Available | A1-1 | 2026-11-24 | string5
+E006 | Mask | Protection | dsc | 1 | Available | B1-2 | 2026-11-24 | Jack
+E007 | Nunchaku | Training | dvf | 1 | Available | E1-1 | 2026-11-24 | Ken
+E008 | Nunchaku | Training | fvcfd | 1 | Available | E1-2 | 2026-11-24 | string5
+E009 | Boxing | Protection | ddfvd | 1 | Available | A1-2 | 2026-11-24 | John
+E011 | Mask | Protection | dds | 1 | Available | B1-3 | 2026-11-24 | John
+E014 | Mask | Protection | csd | 1 | Available | A1-1 | 2026-11-24 | Ken
+E015 | Mask | Protection | csd | 1 | Available | A1-1 | 2026-11-24 | Ken
+E016 | Gloves | Protection | sdcc | 1 | Available | A1-3 | 2026-11-24 | Ken
+E017 | Gloves | Protection | sdcc | 1 | Available | A1-3 | 2026-11-24 | string5
+E018 | Boxing | Protection | dsd | 1 | Available | A1-1 | 2026-11-24 | Ken
+E019 | Boxing | Protection | dsd | 1 | Available | A1-1 | 2026-11-24 | Ken
+E020 | Training Staff | Clothes | dscs | 1 | Unavailable | A1-1 | 2026-11-24 | string5
+E021 | Focus Mitts | Training | hgfd | 1 | Available | A2-2 | 2026-11-24 | string5
+E022 | Martial Arts Uniform (Gi) | Clothes | bjmnb | 1 | Available | A1-1 | 2026-11-24 | string5
