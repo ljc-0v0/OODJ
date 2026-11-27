@@ -61,6 +61,7 @@ public class InstructorPanel extends JPanel {
     private final JButton editButton = new JButton("Update");
     private final JButton deleteButton = new JButton();
     private final JButton backButton = new JButton("Back");
+    private final JButton refreshButton = new JButton("Refresh");
 
     private final DefaultTableModel model = new DefaultTableModel() {
         @Override
@@ -212,6 +213,7 @@ public class InstructorPanel extends JPanel {
         buttonPanel.add(addButton);
         buttonPanel.add(editButton);
         buttonPanel.add(deleteButton);
+        buttonPanel.add(refreshButton);
 
         JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
         contentPanel.setBorder(
@@ -232,6 +234,7 @@ public class InstructorPanel extends JPanel {
         addButton.addActionListener(e -> addRecord());
         editButton.addActionListener(e -> editRecord());
         deleteButton.addActionListener(e -> deleteRecord());
+        refreshButton.addActionListener(e -> loadRecords());
 
         searchField.getDocument().addDocumentListener(
                 new DocumentListener() {
@@ -377,7 +380,6 @@ public class InstructorPanel extends JPanel {
         records.clear();
         model.setRowCount(0);
         model.setColumnIdentifiers(columns());
-        searchField.setText("");
         updateButtons();
 
         try {
